@@ -13,7 +13,6 @@ public final class RedisMock extends AbstractRedisMock {
     private RedisStringCache stringCache;
     private RedisListCache listCache;
     private RedisSetCache setCache;
-    private RedisSortedSetCache zsetCache;
     private RedisHashCache hashCache;
     private List<IRedisCache> caches;
     private Map<String, Timer> timers;
@@ -22,13 +21,11 @@ public final class RedisMock extends AbstractRedisMock {
         stringCache = new RedisStringCache();
         listCache = new RedisListCache();
         setCache = new RedisSetCache();
-        zsetCache = new RedisSortedSetCache();
         hashCache = new RedisHashCache();
         caches = new ArrayList<IRedisCache>();
         caches.add(stringCache);
         caches.add(listCache);
         caches.add(setCache);
-        caches.add(zsetCache);
         caches.add(hashCache);
         timers = new HashMap<String, Timer>();
     }
