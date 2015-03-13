@@ -12,7 +12,7 @@ public interface IRedisString {
 
     public Integer decrby(String key, int decrement) throws WrongTypeException, NotIntegerException, NotImplementedException;
 
-    public String get(String key) throws NotImplementedException;
+    public String get(String key) throws WrongTypeException, NotImplementedException;
 
     public Integer getbit(String key, int offset) throws WrongTypeException, NotImplementedException;
 
@@ -34,7 +34,7 @@ public interface IRedisString {
 
     public String psetex(String key, int milliseconds, String value) throws NotImplementedException;
 
-    public String set(String key, String value, String ... options) throws NotImplementedException;
+    public String set(String key, String value, Object ... options) throws NotImplementedException;
 
     public Integer setbit(String key, int offset, int value) throws NotImplementedException;
 

@@ -30,6 +30,8 @@ public final class RedisMock extends AbstractRedisMock {
         timers = new HashMap<String, Timer>();
     }
 
+    /* IRedisKeys implementations */
+
     @Override public synchronized Integer del(String ... keys) {
         int deleted = 0;
         String key;
@@ -104,6 +106,27 @@ public final class RedisMock extends AbstractRedisMock {
             }
         }
         return "none";
+    }
+
+    /* IRedisString implementations */
+
+    @Override public synchronized String get(String key) throws WrongTypeException {
+        if (exists(key) == 0) {
+            return null;
+        }
+        if (!stringCache.exists(key)) {
+            throw new WrongTypeException();
+        }
+        return stringCache.get(key);
+    }
+
+    @Override public synchronized String set(String key, String value, Object ... options) {
+        if (exists(key) == 1) {
+            del(key);
+        }
+        stringCache.set(key, value);
+        // TODO: nx/xx/ex/px options.
+        return "OK";
     }
 
 }

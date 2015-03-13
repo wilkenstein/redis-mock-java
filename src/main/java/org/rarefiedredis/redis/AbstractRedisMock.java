@@ -120,7 +120,7 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public String get(String key) throws NotImplementedException {
+    @Override public String get(String key) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -164,7 +164,7 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public String set(String key, String value, String ... options) throws NotImplementedException {
+    @Override public String set(String key, String value, Object ... options) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
