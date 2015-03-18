@@ -1,30 +1,30 @@
 public interface IRedisString {
 
-    public String append(String key, String value) throws WrongTypeException, NotImplementedException;
+    public Long append(String key, String value) throws WrongTypeException, NotImplementedException;
 
-    public Integer bitcount(String key) throws WrongTypeException, NotImplementedException;
+    public Long bitcount(String key) throws WrongTypeException, NotImplementedException;
 
-    public Integer bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
+    public Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
 
-    public Integer bitpos(String key, int bit) throws WrongTypeException, BitArgException, NotImplementedException;
+    public Long bitpos(String key, boolean bit) throws WrongTypeException, BitArgException, NotImplementedException;
 
-    public Integer decr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException;
+    public Long decr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException;
 
-    public Integer decrby(String key, int decrement) throws WrongTypeException, NotIntegerException, NotImplementedException;
+    public Long decrby(String key, long decrement) throws WrongTypeException, NotIntegerException, NotImplementedException;
 
     public String get(String key) throws WrongTypeException, NotImplementedException;
 
-    public Integer getbit(String key, int offset) throws WrongTypeException, NotImplementedException;
+    public Boolean getbit(String key, long offset) throws WrongTypeException, NotImplementedException;
 
-    public String getrange(String key, int start, int end) throws WrongTypeException, NotImplementedException;
+    public String getrange(String key, long start, long end) throws WrongTypeException, NotImplementedException;
 
     public String getset(String key, String value) throws WrongTypeException, NotImplementedException;
 
-    public Integer incr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException;
+    public Long incr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException;
 
-    public Integer incrby(String key, int increment) throws WrongTypeException, NotIntegerException, NotImplementedException;
+    public Long incrby(String key, long increment) throws WrongTypeException, NotIntegerException, NotImplementedException;
 
-    public String incrbyfloat(String key, int increment) throws WrongTypeException, NotFloatException, NotImplementedException;
+    public String incrbyfloat(String key, float increment) throws WrongTypeException, NotFloatException, NotImplementedException;
 
     public String mget(String ... keys) throws NotImplementedException;
 
@@ -34,15 +34,15 @@ public interface IRedisString {
 
     public String psetex(String key, int milliseconds, String value) throws NotImplementedException;
 
-    public String set(String key, String value, Object ... options) throws NotImplementedException;
+    public String set(String key, String value, String ... options) throws NotImplementedException, SyntaxErrorException;
 
-    public Integer setbit(String key, int offset, int value) throws NotImplementedException;
+    public Long setbit(String key, long offset, boolean value) throws NotImplementedException;
 
     public String setex(String key, int seconds, String value) throws NotImplementedException;
 
-    public Integer setnx(String key, String value) throws NotImplementedException;
+    public Long setnx(String key, String value) throws NotImplementedException;
 
-    public Integer setrange(String key, int offset, String value) throws WrongTypeException, NotImplementedException;
+    public Long setrange(String key, long offset, String value) throws WrongTypeException, NotImplementedException;
 
-    public Integer strlen(String key) throws WrongTypeException, NotImplementedException;
+    public Long strlen(String key) throws WrongTypeException, NotImplementedException;
 }

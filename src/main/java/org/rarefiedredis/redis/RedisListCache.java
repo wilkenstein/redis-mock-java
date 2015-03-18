@@ -1,7 +1,7 @@
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public final class RedisListCache implements IRedisCache<String, List<String>> {
 
@@ -21,7 +21,7 @@ public final class RedisListCache implements IRedisCache<String, List<String>> {
 
     @Override public void set(String key, String value, Object ... arguments) {
         if (!cache.containsKey(key)) {
-            cache.put(key, new ArrayList<String>());
+            cache.put(key, new LinkedList<String>());
         }
         if (arguments.length == 1) {
             cache.get(key).add((Integer)arguments[0], value);
@@ -39,12 +39,7 @@ public final class RedisListCache implements IRedisCache<String, List<String>> {
         if (!exists(key)) {
             return false;
         }
-        int index = cache.get(key).indexOf(value);
-        if (index != -1) {
-            cache.get(key).remove(index);
-            return true;
-        }
-        return false;
+        return cache.get(key).remove(value);
     }
 
     @Override public String type() {

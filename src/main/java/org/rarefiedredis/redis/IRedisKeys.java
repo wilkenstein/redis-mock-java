@@ -1,14 +1,14 @@
 public interface IRedisKeys {
 
-    public Integer del(String ... keys) throws NotImplementedException;
+    public Long del(String ... keys) throws NotImplementedException;
 
     public String dump(String key) throws NotImplementedException;
 
-    public Integer exists(String key) throws NotImplementedException;
+    public Boolean exists(String key) throws NotImplementedException;
 
-    public Integer expire(String key, long seconds) throws NotImplementedException;
+    public Boolean expire(String key, int seconds) throws NotImplementedException;
 
-    public Integer expireat(String key, long timestamp) throws NotImplementedException;
+    public Boolean expireat(String key, long timestamp) throws NotImplementedException;
 
     public String[] keys(String pattern) throws NotImplementedException;
 
@@ -18,11 +18,11 @@ public interface IRedisKeys {
 
     public Object object(String subcommand, String ... arguments) throws NotImplementedException;
 
-    public Integer persist(String key) throws NotImplementedException;
+    public Boolean persist(String key) throws NotImplementedException;
 
-    public Integer pexpire(String key, long milliseconds) throws NotImplementedException;
+    public Boolean pexpire(String key, long milliseconds) throws NotImplementedException;
 
-    public Integer pexpireat(String key, long timestamp) throws NotImplementedException;
+    public Boolean pexpireat(String key, long timestamp) throws NotImplementedException;
 
     public Integer pttl(String key) throws NotImplementedException;
 

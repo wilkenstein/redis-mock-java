@@ -6,13 +6,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.Date;
 
-public class AbstractRedisMock 
-    implements IRedisKeys, IRedisString {
+public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
 
     public AbstractRedisMock() {
     }
 
-    @Override public Integer del(String ... keys) throws NotImplementedException {
+    /* IRedisKeys commands */
+
+    @Override public Long del(String ... keys) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -20,15 +21,15 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public Integer exists(String key) throws NotImplementedException {
+    @Override public Boolean exists(String key) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer expire(String key, long seconds) throws NotImplementedException {
+    @Override public Boolean expire(String key, int seconds) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer expireat(String key, long timestamp) throws NotImplementedException {
+    @Override public Boolean expireat(String key, long timestamp) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -48,15 +49,15 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public Integer persist(String key) throws NotImplementedException {
+    @Override public Boolean persist(String key) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer pexpire(String key, long milliseconds) throws NotImplementedException {
+    @Override public Boolean pexpire(String key, long milliseconds) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer pexpireat(String key, long timestamp) throws NotImplementedException {
+    @Override public Boolean pexpireat(String key, long timestamp) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -96,27 +97,29 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public String append(String key, String value) throws NotImplementedException {
+    /* IRedisString commands */
+
+    @Override public Long append(String key, String value) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer bitcount(String key) throws WrongTypeException, NotImplementedException {
+    @Override public Long bitcount(String key) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+    @Override public Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer bitpos(String key, int bit) throws WrongTypeException, BitArgException, NotImplementedException {
+    @Override public Long bitpos(String key, boolean bit) throws WrongTypeException, BitArgException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer decr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException {
+    @Override public Long decr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer decrby(String key, int decrement) throws WrongTypeException, NotIntegerException, NotImplementedException {
+    @Override public Long decrby(String key, long decrement) throws WrongTypeException, NotIntegerException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -124,11 +127,11 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public Integer getbit(String key, int offset) throws WrongTypeException, NotImplementedException {
+    @Override public Boolean getbit(String key, long offset) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String getrange(String key, int start, int end) throws WrongTypeException, NotImplementedException {
+    @Override public String getrange(String key, long start, long end) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -136,15 +139,15 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public Integer incr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException {
+    @Override public Long incr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer incrby(String key, int increment) throws WrongTypeException, NotIntegerException, NotImplementedException {
+    @Override public Long incrby(String key, long increment) throws WrongTypeException, NotIntegerException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String incrbyfloat(String key, int increment) throws WrongTypeException, NotFloatException, NotImplementedException {
+    @Override public String incrbyfloat(String key, float increment) throws WrongTypeException, NotFloatException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -164,11 +167,11 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public String set(String key, String value, Object ... options) throws NotImplementedException {
+    @Override public String set(String key, String value, String ... options) throws NotImplementedException, SyntaxErrorException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer setbit(String key, int offset, int value) throws NotImplementedException {
+    @Override public Long setbit(String key, long offset, boolean value) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -176,15 +179,73 @@ public class AbstractRedisMock
         throw new NotImplementedException();
     }
 
-    @Override public Integer setnx(String key, String value) throws NotImplementedException {
+    @Override public Long setnx(String key, String value) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer setrange(String key, int offset, String value) throws WrongTypeException, NotImplementedException {
+    @Override public Long setrange(String key, long offset, String value) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Integer strlen(String key) throws WrongTypeException, NotImplementedException {
+    @Override public Long strlen(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    /* IRedisList commands */
+
+    @Override public String lindex(String key, long index) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long linsert(String key, String before_after, String pivot, String value) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long llen(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String lpop(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long lpush(String key, String element) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long lpushx(String key, String element) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] lrange(String key, long start, long end) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long lrem(String key, long count, String element) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String lset(String key, long index, String element) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String ltrim(String key, long start, long end) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String rpop(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String rpoplpush(String source, String dest) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long rpush(String key, String element) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long rpushx(String key, String element) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
