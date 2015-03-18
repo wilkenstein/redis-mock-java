@@ -121,6 +121,102 @@ public final class RedisMock extends AbstractRedisMock {
         return strlen(key);
     }
 
+    @Override public synchronized Long bitcount(String key, long ... options) throws WrongTypeException {
+        if (!exists(key)) {
+            return 0L;
+        }
+        if (exists(key) && type(key) != "string") {
+            throw new WrongTypeException();
+        }
+        String str = stringCache.get(key);
+        long len = str.length();
+        long start = options.length > 0 ? options[0] : 0L;
+        long end = options.length > 1 ? options[1] : len - 1;
+        if (end >= len) {
+            end = len - 1;
+        }
+        if (start < 0) {
+            start = len + start;
+        }
+        if (end < 0) {
+            end = len + end;
+        }
+        if (start > end) {
+            return 0L;
+        }
+        long count = 0;
+        // TODO: Slow bit-counting, do map to do fast bit counting;
+        for (long idx = start; idx <= end; ++idx) {
+            int n = Character.codePointAt(str, (int)idx);
+            while (n != 0) {
+                count += (n & 1);
+                n >>= 1;
+            }
+        }
+        return count;
+    }
+
+    @Override public synchronized Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException {
+        String[] strs = new String[keys.length];
+        int longest = 0;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            String key = keys[idx];
+            if (!exists(key)) {
+                strs[idx] = "";
+                continue;
+            }
+            if (exists(key) && type(key) != "string") {
+                throw new WrongTypeException();
+            }
+            strs[idx] = stringCache.get(key);
+            if (longest < strs[idx].length()) {
+                longest = strs[idx].length();
+            }
+        }
+        for (int idx = 0; idx < strs.length; ++idx) {
+            while (strs[idx].length() < longest) {
+                strs[idx] += "\0";
+            }
+        }
+        String s = strs[0];
+        for (int idx = 0; idx < strs.length; ++idx) {
+            String str = strs[idx];
+            String cur = "";
+            for (int jdx = 0; jdx < longest; ++jdx) {
+                int n = 0;
+                if (operation == "and") {
+                    n = Character.codePointAt(s, jdx) & Character.codePointAt(str, jdx);
+                }
+                else if (operation == "or") {
+                    n = Character.codePointAt(s, jdx) | Character.codePointAt(str, jdx);
+                }
+                else if (operation == "xor") {
+                    // a XOR a = 0, so avoid XOR'ing the first string with itself.
+                    if (idx > 0) {
+                        n = Character.codePointAt(s, jdx) ^ Character.codePointAt(str, jdx);
+                    }
+                    else {
+                        n = Character.codePointAt(s, jdx);
+                    }
+                }
+                else if (operation == "not") {
+                    n = ~Character.codePointAt(s, jdx);
+                }
+                cur += (char)n;
+            }
+            s = cur;
+            if (operation == "not") {
+                break;
+            }
+        }
+        set(destkey, s);
+        return (long)s.length();
+    }
+
+    @Override public synchronized Long bitops(String key, boolean bit) throws WrongTypeException, BitArgException {
+        
+    }
+
     @Override public synchronized String get(String key) throws WrongTypeException {
         if (!exists(key)) {
             return null;

@@ -2,7 +2,7 @@ public interface IRedisString {
 
     public Long append(String key, String value) throws WrongTypeException, NotImplementedException;
 
-    public Long bitcount(String key) throws WrongTypeException, NotImplementedException;
+    public Long bitcount(String key, long ... options) throws WrongTypeException, NotImplementedException;
 
     public Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
 
