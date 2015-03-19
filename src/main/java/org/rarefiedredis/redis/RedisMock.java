@@ -213,8 +213,55 @@ public final class RedisMock extends AbstractRedisMock {
         return (long)s.length();
     }
 
-    @Override public synchronized Long bitops(String key, boolean bit) throws WrongTypeException, BitArgException {
-        
+    @Override public synchronized Long bitpos(String key, long bit, long ... options) throws WrongTypeException, BitArgException {
+        if (bit != 0L && bit != 1L) {
+            throw new BitArgException();
+        }
+        if (exists(key) && type(key) != "string") {
+            throw new WrongTypeException();
+        }
+        if (!exists(key)) {
+            if (bit == 0L) {
+                return 0L;
+            }
+            return -1L;
+        }
+        String value = stringCache.get(key);
+        long len = (long)value.length();
+        long start = options.length > 0 ? options[0] : 0;
+        long end = options.length > 1 ? options[1] : len - 1;
+        boolean noend = !(options.length > 1);
+        if (start < 0) {
+            start = len + start;
+        }
+        if (end < 0) {
+            end = len + start;
+        }
+        if (start > end) {
+            return -1L;
+        }
+        long idx;
+        for (idx = start; idx <= end; ++idx) {
+            int ch = Character.codePointAt(value, (int)idx);
+            int cnt = 0;
+            while (cnt < 8) {
+                if (bit == 0L && (ch & 0x80) != 0x80) {
+                    return (long)(idx)*8L + (long)cnt;
+                }
+                if (bit == 1L && (ch & 0x80) == 0x80) {
+                    return (long)(idx)*8L + (long)cnt;
+                }
+                ch <<= 1;
+                cnt += 1;
+            }
+        }
+        if (bit == 1) {
+            return -1L;
+        }
+        if (bit == 0 && noend) {
+            return (long)(idx)*8L;
+        }
+        return -1L;
     }
 
     @Override public synchronized String get(String key) throws WrongTypeException {
