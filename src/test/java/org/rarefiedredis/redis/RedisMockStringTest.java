@@ -200,6 +200,178 @@ public class RedisMockStringTest {
 
     @Ignore @Test public void bitopShouldZeroPadOutNonExistentKeys() {
     }
+
+    @Test public void bitposShouldThrowAnErrorIfKeyIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.bitpos(k, 0L);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+    }
+
+    @Test public void bitposShouldReturnNegOneForKeyThatDoesNotExistAndSetBitIsSpecified() throws WrongTypeException, BitArgException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals(-1L, (long)redis.bitpos(k, 1L));
+    }
+
+    @Test public void bitposShouldReturnZeroForKeyThatDoesNotExistAndClearBitIsSpecified() throws WrongTypeException, BitArgException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals(0L, (long)redis.bitpos(k, 0L));
+    }
+    
+    @Test public void bitposShouldThrowAnErrorIfBitIsNotClearOrSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        try {
+            redis.bitpos(k, 2L);
+        }
+        catch (BitArgException bae) {
+            assertEquals(true, true);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+    }
+
+    @Test public void bitposShouldReturnOffTheEndForKeyThatIsAllOnesAndClearBitSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        v += v;
+        redis.set(k, v);
+        assertEquals(16L, (long)redis.bitpos(k, 0L));
+    }
+
+    @Test public void bitposShouldReturnNegOneForKeyThatIsAllZeroesAndSetBitSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0\0";
+        redis.set(k, v);
+        assertEquals(-1L, (long)redis.bitpos(k, 1L));
+    }
+
+    @Test public void bitposShouldReturnOffTheEndForKeyThatIsAllOnesClearBitSpecifiedAndOnlyStartSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        v = v + v + v;
+        redis.set(k, v);
+        assertEquals(24L, (long)redis.bitpos(k, 0L, 1L));
+        assertEquals(24L, (long)redis.bitpos(k, 0L, 2L));
+    }
+
+    @Test public void bitposShouldReturnNegOneForKeyThatIsAllOnesClearBitSpecifiedAndStartAndEndBothSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        v = v + v + v + v;
+        redis.set(k, v);
+        assertEquals(-1L, (long)redis.bitpos(k, 0L, 1L, 2L));
+        assertEquals(-1L, (long)redis.bitpos(k, 0L, 0L, 3L));
+    }
+
+    @Test public void bitposShouldReturnNegOneForKeyThatIsAllZeroesSetBitIsSpecifiedAndStartIsSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0\0\0";
+        redis.set(k, v);
+        assertEquals(-1L, (long)redis.bitpos(k, 1L, 1L));
+        assertEquals(-1L, (long)redis.bitpos(k, 1L, 2L));
+    }
+
+    @Test public void bitposShouldReturnNegOneForKeyThatIsAllZeroesSetBitSpecifiedAndStartAndEndBothSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0\0\0\0";
+        redis.set(k, v);
+        assertEquals(-1L, (long)redis.bitpos(k, 1L, 1L, 2L));
+        assertEquals(-1L, (long)redis.bitpos(k, 1L, 2L, 3L));
+    }
+
+    @Test public void bitposShouldReturnFirstZeroPosForKeyWithClearBitSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        v += (char)(0XCF);
+        redis.set(k, v);
+        assertEquals(10L, (long)redis.bitpos(k, 0L));
+    }
+
+    @Test public void bitposShouldReturnFirstZeroPosForKeyWithClearBitSpecifiedFromStart() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        v += (char)(0xFF);
+        v += (char)(0xDF);
+        redis.set(k, v);
+        assertEquals(18L, (long)redis.bitpos(k, 0L, 1L));
+        assertEquals(18L, (long)redis.bitpos(k, 0L, 0L));
+        assertEquals(-1L, (long)redis.bitpos(k, 0L, 3L));
+    }
+
+    @Test public void bitposShouldReturnFirstZeroPosForKeyWithClearBitSpecifiedBetweenStartAndEnd() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        v += (char)(0xFF);
+        v += (char)(0xFF);
+        v += (char)(0xDF);
+        v += (char)(0xFF);
+        redis.set(k, v);
+        assertEquals(26L, (long)redis.bitpos(k, 0L, 2L, 5L));
+        assertEquals(26L, (long)redis.bitpos(k, 0L, 1L, 4L));
+        assertEquals(-1L, (long)redis.bitpos(k, 0L, 0L, 1L));
+    }
+
+    @Test public void bitposShouldReturnFirstOnePosForKeyWithSetBitSpecified() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0";
+        v += (char)(0x04);
+        redis.set(k, v);
+        assertEquals(13L, (long)redis.bitpos(k, 1L));
+    }
+
+    @Test public void bitposShouldReturnFirstOnePosForKeyWithSetBitSpecifiedFromStart() throws WrongTypeException, BitArgException, SyntaxErrorException { 
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0\0\0";
+        v += (char)(0x04);
+        v += "\0";
+        redis.set(k, v);
+        assertEquals(29L, (long)redis.bitpos(k, 1L, 1L));
+        assertEquals(29L, (long)redis.bitpos(k, 1L, 2L));
+    }
+
+    @Test public void bitposShouldReturnFirstOnePosForKeyWithSetBitSepcifiedBetweenStartAndEnd() throws WrongTypeException, BitArgException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0\0\0";
+        v += (char)(0x04);
+        v += "\0";
+        redis.set(k, v);
+        assertEquals(29L, (long)redis.bitpos(k, 1L, 1L, 3L));
+        assertEquals(29L, (long)redis.bitpos(k, 1L, 2L, 4L));
+    }
     
     @Test public void get() throws WrongTypeException, SyntaxErrorException {
         RedisMock redis = new RedisMock();
