@@ -1,5 +1,10 @@
+/**
+ * Interface for redis string commands.
+ */
 public interface IRedisString {
-
+    /**
+     * Append value onto key.
+     */
     public Long append(String key, String value) throws WrongTypeException, NotImplementedException;
 
     public Long bitcount(String key, long ... options) throws WrongTypeException, NotImplementedException;

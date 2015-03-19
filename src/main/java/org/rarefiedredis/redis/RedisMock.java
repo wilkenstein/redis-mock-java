@@ -2,21 +2,31 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.SortedSet;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * An in-memory redis-compatible key-value cache and store written
+ * in pure Java.
+ */
 public final class RedisMock extends AbstractRedisMock {
 
+    /** Cache to hold strings. */
     private RedisStringCache stringCache;
+    /** Cache to hold lists. */
     private RedisListCache listCache;
+    /** Cache to hold sets. */
     private RedisSetCache setCache;
+    /** Cache to hold hashes. */
     private RedisHashCache hashCache;
     private List<IRedisCache> caches;
     private Map<String, Timer> timers;
 
+    /**
+     * Default constructor. Initializes an empty redis
+     * database.
+     */
     public RedisMock() {
         stringCache = new RedisStringCache();
         listCache = new RedisListCache();
@@ -30,9 +40,15 @@ public final class RedisMock extends AbstractRedisMock {
         timers = new HashMap<String, Timer>();
     }
 
+    private void checkType(String key, String type) throws WrongTypeException {
+        if (exists(key) && !type(key).equals(type)) {
+            throw new WrongTypeException();
+        }
+    }
+
     /* IRedisKeys implementations */
 
-    @Override public synchronized Long del(String ... keys) {
+    @Override public synchronized Long del(final String ... keys) {
         long deleted = 0L;
         String key;
         for (int idx = 0; idx < keys.length; idx += 1) {
@@ -48,7 +64,7 @@ public final class RedisMock extends AbstractRedisMock {
         return deleted;
     }
 
-    @Override public synchronized Boolean exists(String key) {
+    @Override public synchronized Boolean exists(final String key) {
         for (IRedisCache cache : caches) {
             if (cache.exists(key)) {
                 return true;
@@ -57,16 +73,16 @@ public final class RedisMock extends AbstractRedisMock {
         return false;
     }
 
-    @Override public synchronized Boolean expire(String key, int seconds) {
-        return this.pexpire(key, seconds*1000);
+    @Override public synchronized Boolean expire(final String key, final int seconds) {
+        return this.pexpire(key, seconds * 1000);
     }
 
-    @Override public synchronized Boolean expireat(String key, long timestamp) {
+    @Override public synchronized Boolean expireat(final String key, final long timestamp) {
         Date now = new Date();
-        return pexpire(key, timestamp*1000 - now.getTime());
+        return pexpire(key, timestamp * 1000 - now.getTime());
     }
 
-    @Override public synchronized Boolean persist(String key) {
+    @Override public synchronized Boolean persist(final String key) {
         if (exists(key) && timers.containsKey(key)) {
             timers.get(key).cancel();
             timers.remove(key);
@@ -75,7 +91,7 @@ public final class RedisMock extends AbstractRedisMock {
         return false;
     }
 
-    @Override public synchronized Boolean pexpire(final String key, long milliseconds) {
+    @Override public synchronized Boolean pexpire(final String key, final long milliseconds) {
         if (exists(key)) {
             Timer timer = new Timer();
             timers.put(key, timer);
@@ -89,12 +105,12 @@ public final class RedisMock extends AbstractRedisMock {
         return false;
     }
 
-    @Override public synchronized Boolean pexpireat(String key, long timestamp) {
+    @Override public synchronized Boolean pexpireat(final String key, final long timestamp) {
         Date now = new Date();
         return this.pexpire(key, timestamp - now.getTime());
     }
 
-    @Override public synchronized String type(String key) {
+    @Override public synchronized String type(final String key) {
         for (IRedisCache cache : caches) {
             if (cache.exists(key)) {
                 return cache.type();
@@ -105,15 +121,14 @@ public final class RedisMock extends AbstractRedisMock {
 
     /* IRedisString implementations */
 
-    @Override public synchronized Long append(String key, String value) throws WrongTypeException {
-        if (exists(key) && type(key) != "string") {
-            throw new WrongTypeException();
-        }
+    @Override public synchronized Long append(final String key, final String value) throws WrongTypeException {
+        checkType(key, "string");
         if (!exists(key)) {
             try {
                 set(key, value);
             }
-            catch (Exception e) {}
+            catch (Exception e) {
+            }
         }
         else {
             stringCache.set(key, stringCache.get(key) + value);
@@ -121,13 +136,11 @@ public final class RedisMock extends AbstractRedisMock {
         return strlen(key);
     }
 
-    @Override public synchronized Long bitcount(String key, long ... options) throws WrongTypeException {
+    @Override public synchronized Long bitcount(final String key, long ... options) throws WrongTypeException {
         if (!exists(key)) {
             return 0L;
         }
-        if (exists(key) && type(key) != "string") {
-            throw new WrongTypeException();
-        }
+        checkType(key, "string");
         String str = stringCache.get(key);
         long len = str.length();
         long start = options.length > 0 ? options[0] : 0L;
@@ -156,7 +169,7 @@ public final class RedisMock extends AbstractRedisMock {
         return count;
     }
 
-    @Override public synchronized Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException {
+    @Override public synchronized Long bitop(final String operation, final String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException {
         String[] strs = new String[keys.length];
         int longest = 0;
         for (int idx = 0; idx < keys.length; ++idx) {
@@ -165,9 +178,7 @@ public final class RedisMock extends AbstractRedisMock {
                 strs[idx] = "";
                 continue;
             }
-            if (exists(key) && type(key) != "string") {
-                throw new WrongTypeException();
-            }
+            checkType(key, "string");
             strs[idx] = stringCache.get(key);
             if (longest < strs[idx].length()) {
                 longest = strs[idx].length();
@@ -181,16 +192,16 @@ public final class RedisMock extends AbstractRedisMock {
         String s = strs[0];
         for (int idx = 0; idx < strs.length; ++idx) {
             String str = strs[idx];
-            String cur = "";
+            StringBuffer cur = new StringBuffer();
             for (int jdx = 0; jdx < longest; ++jdx) {
                 int n = 0;
-                if (operation == "and") {
+                if (operation.equals("and")) {
                     n = Character.codePointAt(s, jdx) & Character.codePointAt(str, jdx);
                 }
-                else if (operation == "or") {
+                else if (operation.equals("or")) {
                     n = Character.codePointAt(s, jdx) | Character.codePointAt(str, jdx);
                 }
-                else if (operation == "xor") {
+                else if (operation.equals("xor")) {
                     // a XOR a = 0, so avoid XOR'ing the first string with itself.
                     if (idx > 0) {
                         n = Character.codePointAt(s, jdx) ^ Character.codePointAt(str, jdx);
@@ -199,13 +210,13 @@ public final class RedisMock extends AbstractRedisMock {
                         n = Character.codePointAt(s, jdx);
                     }
                 }
-                else if (operation == "not") {
+                else if (operation.equals("not")) {
                     n = ~Character.codePointAt(s, jdx);
                 }
-                cur += (char)n;
+                cur.append((char)n);
             }
-            s = cur;
-            if (operation == "not") {
+            s = cur.toString();
+            if (operation.equals("not")) {
                 break;
             }
         }
@@ -217,9 +228,7 @@ public final class RedisMock extends AbstractRedisMock {
         if (bit != 0L && bit != 1L) {
             throw new BitArgException();
         }
-        if (exists(key) && type(key) != "string") {
-            throw new WrongTypeException();
-        }
+        checkType(key, "string");
         if (!exists(key)) {
             if (bit == 0L) {
                 return 0L;
@@ -264,17 +273,87 @@ public final class RedisMock extends AbstractRedisMock {
         return -1L;
     }
 
-    @Override public synchronized String get(String key) throws WrongTypeException {
+    @Override public synchronized Long decr(String key) throws WrongTypeException, NotIntegerException {
+        return decrby(key, 1);
+    }
+
+    @Override public synchronized Long decrby(String key, long decrement) throws WrongTypeException, NotIntegerException {
+        Long newValue = 0L;
+        try {
+            if (!exists(key)) {
+                set(key, "0");
+            }
+            checkType(key, "string");
+            long asInt = Long.parseLong(get(key));
+            newValue = asInt - decrement;
+            set(key, String.valueOf(newValue));
+        }
+        catch (NumberFormatException nfe) {
+            throw new NotIntegerException();
+        }
+        catch (SyntaxErrorException see) {
+        }
+        return newValue;
+    }
+
+    @Override public synchronized String get(final String key) throws WrongTypeException {
         if (!exists(key)) {
             return null;
         }
-        if (!stringCache.exists(key)) {
-            throw new WrongTypeException();
-        }
+        checkType(key, "string");
         return stringCache.get(key);
     }
 
-    @Override public synchronized String set(String key, String value, String ... options) throws SyntaxErrorException {
+    @Override public synchronized Boolean getbit(String key, long offset) throws WrongTypeException {
+        if (!exists(key)) {
+            return false;
+        }
+        checkType(key, "string");
+        String value = stringCache.get(key);
+        if (offset >= value.length() * 8L) {
+            return false;
+        }
+        int n = value.codePointAt((int)Math.floor(offset/8L));
+        long pos = offset % 8;
+        return ((n >> pos) & 0x01) == 1;
+    }
+
+    @Override public synchronized String getrange(String key, long start, long end) throws WrongTypeException {
+        if (!exists(key)) {
+            return "";
+        }
+        checkType(key, "string");
+        String value = stringCache.get(key);
+        long len = 0L;
+        if (end < 0) {
+            end = value.length() + end;
+        }
+        if (start < 0) {
+            start = value.length() + start;
+        }
+        try {
+            return value.substring((int)start, (int)(end + 1L));
+        }
+        catch (IndexOutOfBoundsException e) {
+            return "";
+        }
+    }
+
+    @Override public synchronized String getset(String key, String value) throws WrongTypeException {
+        String prev = "";
+        try {
+            prev = get(key);
+            set(key, value);
+        }
+        catch (WrongTypeException wte) {
+            throw wte;
+        }
+        catch (SyntaxErrorException see) {
+        }
+        return prev;
+    }
+
+    @Override public synchronized String set(final String key, final String value, String ... options) throws SyntaxErrorException {
         boolean nx = false, xx = false;
         int ex = -1;
         long px = -1;
@@ -328,7 +407,7 @@ public final class RedisMock extends AbstractRedisMock {
         return "OK";
     }
 
-    @Override public synchronized Long strlen(String key) throws WrongTypeException {
+    @Override public synchronized Long strlen(final String key) throws WrongTypeException {
         if (!exists(key)) {
             return 0L;
         }
@@ -340,7 +419,7 @@ public final class RedisMock extends AbstractRedisMock {
 
     /* IRedisList implementations */
 
-    @Override public synchronized Long lpush(String key, String element) throws WrongTypeException {
+    @Override public synchronized Long lpush(final String key, final String element) throws WrongTypeException {
         if (exists(key) && type(key) != "list") {
             throw new WrongTypeException();
         }
@@ -348,7 +427,7 @@ public final class RedisMock extends AbstractRedisMock {
         return llen(key);
     }
 
-    @Override public synchronized Long llen(String key) throws WrongTypeException {
+    @Override public synchronized Long llen(final String key) throws WrongTypeException {
         if (exists(key) && type(key) != "list") {
             throw new WrongTypeException();
         }
