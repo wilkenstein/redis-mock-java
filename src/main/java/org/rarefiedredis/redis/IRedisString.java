@@ -6,7 +6,7 @@ public interface IRedisString {
 
     public Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
 
-    public Long bitpos(String key, boolean bit) throws WrongTypeException, BitArgException, NotImplementedException;
+    public Long bitpos(String key, long bit, long ... options) throws WrongTypeException, BitArgException, NotImplementedException;
 
     public Long decr(String key) throws WrongTypeException, NotIntegerException, NotImplementedException;
 

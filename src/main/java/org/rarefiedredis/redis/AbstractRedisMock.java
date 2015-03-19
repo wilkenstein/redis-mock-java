@@ -111,7 +111,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public Long bitpos(String key, boolean bit) throws WrongTypeException, BitArgException, NotImplementedException {
+    @Override public Long bitpos(String key, long bit, long ... options) throws WrongTypeException, BitArgException, NotImplementedException {
         throw new NotImplementedException();
     }
 
