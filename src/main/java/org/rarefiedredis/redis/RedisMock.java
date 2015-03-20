@@ -169,7 +169,7 @@ public final class RedisMock extends AbstractRedisMock {
         return count;
     }
 
-    @Override public synchronized Long bitop(final String operation, final String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException {
+    @Override public synchronized Long bitop(String operation, final String destkey, String ... keys) throws WrongTypeException {
         String[] strs = new String[keys.length];
         int longest = 0;
         for (int idx = 0; idx < keys.length; ++idx) {
@@ -189,6 +189,7 @@ public final class RedisMock extends AbstractRedisMock {
                 strs[idx] += "\0";
             }
         }
+        operation = operation.toLowerCase();
         String s = strs[0];
         for (int idx = 0; idx < strs.length; ++idx) {
             String str = strs[idx];
@@ -220,7 +221,11 @@ public final class RedisMock extends AbstractRedisMock {
                 break;
             }
         }
-        set(destkey, s);
+        try {
+            set(destkey, s);
+        }
+        catch (SyntaxErrorException e) {
+        }
         return (long)s.length();
     }
 

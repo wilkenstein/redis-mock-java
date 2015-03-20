@@ -107,7 +107,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+    @Override public Long bitop(String operation, String destkey, String ... keys) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
