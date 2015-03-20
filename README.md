@@ -1,12 +1,8 @@
 # redis-mock-java
-An in-memory redis-compatible implementation written in Java.
+An in-memory redis-compatible implementation written in pure Java. Part of the [Rarefied Redis Project](http://wilkenstein.github.io/rarefied-redis/).
 
 ### Status
 [![Build Status](https://travis-ci.org/wilkenstein/redis-mock-java.svg?branch=master)](https://travis-ci.org/wilkenstein/redis-mock-java)
-
-## Rarefied Redis
-
-This repository is part of the Rarefied Redis Project. TODO: Link.
 
 ## Installation
 

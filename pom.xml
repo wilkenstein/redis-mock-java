@@ -8,7 +8,31 @@
   <packaging>jar</packaging>
   
   <name>redis-java</name>
+  <description>An in-memory redis-compatible implementation written in pure Java</description>
   <url>http://maven.apache.org</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://github.com/wilkenstein/redis-mock-java/blob/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git@github.com:wilkenstein/redis-mock-java.git</connection>
+    <developerConnection>scm:git:git@github.com:wilkenstein/redis-mock-java.git</developerConnection>
+    <url>https://github.com/wilkenstein/redis-mock-java</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>Brian Wilke</name>
+      <email>wilke.brian@gmail.com</email>
+      <organization>Rarefied Redis</organization>
+      <organizationUrl>http://wilkenstein.github.io/rarefied-redis/</organizationUrl>
+    </developer>
+  </developers>
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
