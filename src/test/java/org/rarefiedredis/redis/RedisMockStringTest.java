@@ -660,6 +660,308 @@ public class RedisMockStringTest {
         assertEquals(v.substring(1, 4), redis.getrange(k, 1L, -2L));
     }
 
+    @Test public void getsetShouldReturnNothingForKeyThatDidNotExistAndSetTheKey() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k1 = "key1", k2 = "key2";
+        String v = "value";
+        assertEquals(null, redis.getset(k1, v));
+        assertEquals(true, redis.exists(k1));
+        assertEquals("string", redis.type(k1));
+        assertEquals(v, redis.get(k1));
+        assertEquals(null, redis.getset(k2, v));
+        assertEquals(true, redis.exists(k1));
+        assertEquals("string", redis.type(k1));
+        assertEquals(v, redis.get(k1));
+    }
+
+    @Test public void getsetShouldThrowAnErrorIfKeyExistsAndIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.getset(k, v);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void getsetShouldReturnThePreviousValueForAnExistingKey() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "value1", v2 = "value2", v3 = "value3";
+        redis.set(k, v1);
+        assertEquals(v1, redis.getset(k, v2));
+        assertEquals(v2, redis.get(k));
+        assertEquals(v2, redis.getset(k, v3));
+        assertEquals(v3, redis.get(k));
+    }
+
+    @Test public void incrShouldThrowAnErrorIfKeyIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.incr(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void incrShouldThrowAnErrorIfKeyIsNotAnInteger() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.incr(k);
+        }
+        catch (NotIntegerException nie) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void incrShouldInitializeKeyWithZeroIfItDoesNotExistThenIncr() throws WrongTypeException, NotIntegerException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        assertEquals(1L, (long)redis.incr(k));
+        redis.del(k);
+        assertEquals(1L, (long)redis.incr(k));
+    }
+
+    @Test public void incrShouldIncrAnIntegerKeyByOne() throws WrongTypeException, NotIntegerException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        long v = 123L;
+        redis.set(k, String.valueOf(v));
+        assertEquals(v + 1L, (long)redis.incr(k));
+        assertEquals(String.valueOf(v + 1L), redis.get(k));
+        assertEquals(v + 2L, (long)redis.incr(k));
+        assertEquals(String.valueOf(v + 2L), redis.get(k));
+    }
+
+    @Test public void incrbyShouldThrowAnErrorIfKeyIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.incrby(k, 4L);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void incrbyShouldThrowAnErrorIfKeyIsNotAnInteger() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.incrby(k, 4L);
+        }
+        catch (NotIntegerException nie) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void incrbyShouldInitKeyToZeroAndThenIncrbyIfItDoesNotExist() throws WrongTypeException, NotIntegerException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        assertEquals(4L, (long)redis.incrby(k, 4L));
+        assertEquals(String.valueOf(4L), redis.get(k));
+        redis.del(k);
+        assertEquals(13L, (long)redis.incrby(k, 13L));
+        assertEquals(String.valueOf(13L), redis.get(k));
+    }
+
+    @Test public void incrbyShouldIncrAnIntegerKeyByIncrement() throws WrongTypeException, NotIntegerException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        long v = 123L;
+        redis.set(k, String.valueOf(v));
+        assertEquals(v + 4L, (long)redis.incrby(k, 4L));
+        assertEquals(String.valueOf(v + 4L), redis.get(k));
+        assertEquals(v + 4L + 13L, (long)redis.incrby(k, 13L));
+        assertEquals(String.valueOf(v + 4L + 13L), redis.get(k));
+    }
+
+    @Test public void incrbyfloatShouldThrowAnErrorIfKeyIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.incrbyfloat(k, 0.9d);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void incrbyfloatShouldThrowAnErrorIfKeyIsNotANumber() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.incrbyfloat(k, 0.9d);
+        }
+        catch (NotFloatException nfe) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void incrbyfloatShouldInitKeyWithZeroThenIncrbyfloatIfItDoesNotExist() throws WrongTypeException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        assertEquals("0.8", redis.incrbyfloat(k, 0.8d));
+        assertEquals(String.valueOf(0.8d), redis.get(k));
+        redis.del(k);
+        assertEquals("3.1415", redis.incrbyfloat(k, 3.1415));
+        assertEquals(String.valueOf(3.1415d), redis.get(k));
+    }
+
+    @Test public void mgetShouldGetAllTheKeys() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k1 = "key1", k2 = "key2", k3 = "key3";
+        String v1 = "value1", v2 = "value2", v3 = "value3";
+        redis.set(k1, v1);
+        redis.lpush(k2, v2);
+        redis.set(k3, v3);
+        String gets[] = redis.mget(k1, k2, k3, "na");
+        assertEquals(4, gets.length);
+        assertEquals(v1, gets[0]);
+        assertEquals(null, gets[1]);
+        assertEquals(v3, gets[2]);
+        assertEquals(null, gets[3]);
+    }
+
+    @Test public void msetShouldThrowAnErrorIfArgsIsIncorrect() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        try {
+            redis.mset();
+        }
+        catch (ArgException e) {
+            assertEquals(true, true);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+            return;
+        }
+        try {
+            redis.mset("k1", "v1", "k2");
+        }
+        catch (ArgException e) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void msetShouldSetAllTheKeys() throws WrongTypeException, ArgException {
+        RedisMock redis = new RedisMock();
+        String k1 = "key1", k2 = "key2", k3 = "key3";
+        String v1 = "value1", v2 = "value2", v3 = "value3";
+        redis.lpush(k2, v2);
+        assertEquals("OK", redis.mset(k1, v1, k2, v2, k3, v3));
+        assertEquals("string", redis.type(k2));
+        assertEquals(v1, redis.get(k1));
+        assertEquals(v2, redis.get(k2));
+        assertEquals(v3, redis.get(k3));
+    }
+
+    @Test public void msetnxShouldThrowAnErrorIfArgsIsIncorrect() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        try {
+            redis.msetnx();
+        }
+        catch (ArgException e) {
+            assertEquals(true, true);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+            return;
+        }
+        try {
+            redis.msetnx("k1", "v1", "k2");
+        }
+        catch (ArgException e) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void msetnxShouldSetAllTheKeysIfNoneExist() throws WrongTypeException, ArgException {
+        RedisMock redis = new RedisMock();
+        String k1 = "key1", k2 = "key2", k3 = "key3";
+        String v1 = "value1", v2 = "value2", v3 = "value3";
+        assertEquals(true, redis.msetnx(k1, v1, k2, v2, k3, v3));
+        assertEquals(v1, redis.get(k1));
+        assertEquals(v2, redis.get(k2));
+        assertEquals(v3, redis.get(k3));
+    }
+
+    @Test public void msetnxShouldNotSetAnyKeyIfAtLeastOneKeyExists() throws WrongTypeException, ArgException {
+        RedisMock redis = new RedisMock();
+        String k1 = "key1", k2 = "key2", k3 = "key3";
+        String v1 = "value1", v2 = "value2", v3 = "value3";
+        redis.lpush(k2, v2);
+        assertEquals(false, redis.msetnx(k1, v1, k2, v2, k3, v3));
+        assertEquals(false, redis.msetnx(k2, v2, k3, v3, k1, v1));
+        assertEquals(false, redis.msetnx(k3, v3, k1, v1, k2, v2));
+    }
+
+    @Test public void psetexShouldSetAndExpireKeyInMilliseconds() throws WrongTypeException, SyntaxErrorException, InterruptedException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals("OK", redis.psetex(k, 1250L, v));
+        Thread.sleep(600);
+        assertEquals(v, redis.get(k));
+        Thread.sleep(700);
+        assertEquals(false, redis.exists(k));
+        assertEquals(null, redis.get(k));
+    }
+
+
     @Test public void setShouldSetAKeyToAStringValue() throws WrongTypeException, SyntaxErrorException {
         RedisMock redis = new RedisMock();
         assertEquals(true, redis.get("key") == null);
@@ -733,6 +1035,158 @@ public class RedisMockStringTest {
         Thread.sleep(700);
         assertEquals(false, redis.exists(k));
         assertEquals(null, redis.get(k));
+    }
+
+    @Test public void setbitShouldThrowAnErrorIfKeyIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.setbit(k, 0L, true);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void setbitShouldSetTheBitAtOffset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFD);
+        v += (char)(0XEF);
+        v += "\0";
+        redis.set(k, v);
+        assertEquals(0L, (long)redis.setbit(k, 6L, true));
+        assertEquals(0xFF, redis.get(k).codePointAt(0));
+        assertEquals(1L, (long)redis.setbit(k, 0L, true));
+        assertEquals(0xFF, redis.get(k).codePointAt(0));
+        assertEquals(0L, (long)redis.setbit(k, 11L, true));
+        assertEquals(0xFF, redis.get(k).codePointAt(1));
+    }
+
+    @Test public void setbitShouldClearTheBitAtOffset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0x04);
+        v += (char)(0x20);
+        v += "\0";
+        redis.set(k, v);
+        assertEquals(1L, (long)redis.setbit(k, 5L, false));
+        assertEquals(0, redis.get(k).codePointAt(0));
+        assertEquals(0L, (long)redis.setbit(k, 0L, false));
+        assertEquals(0, redis.get(k).codePointAt(0));
+        assertEquals(1L, (long)redis.setbit(k, 10L, false));
+        assertEquals(0, redis.get(k).codePointAt(1));
+    }
+
+    @Test public void setbitShouldPadTheStringOutThenSetTheBitAtOffset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "\0";
+        redis.set(k, v);
+        assertEquals(0L, (long)redis.setbit(k, 11L, true));
+        assertEquals(2, redis.get(k).length());
+        assertEquals(0x10, redis.get(k).codePointAt(1));
+        assertEquals(0L, (long)redis.setbit(k, 37L, true));
+        assertEquals(5, redis.get(k).length());
+        assertEquals(0x04, redis.get(k).codePointAt(4));
+    }
+
+    @Test public void setbitShouldPadTheStringOutThenClearTheBitAtOffset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "";
+        v += (char)(0xFF);
+        redis.set(k, v);
+        assertEquals(0L, (long)redis.setbit(k, 11L, false));
+        assertEquals(2L, redis.get(k).length());
+        assertEquals(0L, redis.get(k).codePointAt(1));
+        assertEquals(1L, (long)redis.setbit(k, 0L, false));
+        assertEquals(2, redis.get(k).length());
+        assertEquals(0x7F, redis.get(k).codePointAt(0));
+        assertEquals(0L, (long)redis.setbit(k, 37L, false));
+        assertEquals(5, redis.get(k).length());
+        assertEquals(0, redis.get(k).codePointAt(4));
+    }
+
+    @Test public void setexShouldSetAndExpireKeyInSeconds() throws WrongTypeException, InterruptedException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.setex(k, 1, v);
+        assertEquals(v, redis.get(k));
+        Thread.sleep(500);
+        assertEquals(v, redis.get(k));
+        Thread.sleep(700);
+        assertEquals(null, redis.get(k));
+    }
+
+    @Test public void setnxShouldSetKeyIfItDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals(1L, (long)redis.setnx(k, v));
+        assertEquals(v, redis.get(k));
+    }
+
+    @Test public void setnxShouldNotSetKeyIfItExists() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals("OK", redis.set(k, v));
+        assertEquals(0L, (long)redis.setnx(k, v));
+        redis.del(k);
+        redis.lpush(k, v);
+        assertEquals(0L, (long)redis.setnx(k, v));
+        assertEquals("list", redis.type(k));
+    }
+
+    @Test public void setrangeShouldThrowAnErrorIfKeyIsNotAString() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        try {
+            redis.setrange(k, 0L, v);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void setrangeShouldSubstituteTheValueAtOffsetWithinLengthOfKey() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        assertEquals(5L, (long)redis.setrange(k, 1L, "ula"));
+        assertEquals("vulae", redis.get(k));
+        assertEquals(5L, (long)redis.setrange(k, 0L, "e"));
+        assertEquals("eulae", redis.get(k));
+        assertEquals(5L, (long)redis.setrange(k, 4L, "v"));
+        assertEquals("eulav", redis.get(k));
+    }
+
+    @Test public void setrangeShouldZeroPadKeyForOffsetOutsideKeyLength() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        assertEquals(10L, (long)redis.setrange(k, 5L, v));
+        assertEquals(v + v, redis.get(k));
+        assertEquals(25L, (long)redis.setrange(k, 20L, v));
+        assertEquals(v + v + "\0\0\0\0\0\0\0\0\0\0" + v, redis.get(k));
     }
 
     @Test public void strlenShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {

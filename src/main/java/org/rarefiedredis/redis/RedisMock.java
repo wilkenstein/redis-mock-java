@@ -304,7 +304,7 @@ public final class RedisMock extends AbstractRedisMock {
         return stringCache.get(key);
     }
 
-    @Override public synchronized Boolean getbit(String key, long offset) throws WrongTypeException {
+    @Override public synchronized Boolean getbit(final String key, final long offset) throws WrongTypeException {
         if (!exists(key)) {
             return false;
         }
@@ -318,7 +318,7 @@ public final class RedisMock extends AbstractRedisMock {
         return ((n >> pos) & 0x01) == 1;
     }
 
-    @Override public synchronized String getrange(String key, long start, long end) throws WrongTypeException {
+    @Override public synchronized String getrange(final String key, long start, long end) throws WrongTypeException {
         if (!exists(key)) {
             return "";
         }
@@ -339,8 +339,8 @@ public final class RedisMock extends AbstractRedisMock {
         }
     }
 
-    @Override public synchronized String getset(String key, String value) throws WrongTypeException {
-        String prev = "";
+    @Override public synchronized String getset(final String key, final String value) throws WrongTypeException {
+        String prev = null;
         try {
             prev = get(key);
             set(key, value);
@@ -351,6 +351,97 @@ public final class RedisMock extends AbstractRedisMock {
         catch (SyntaxErrorException see) {
         }
         return prev;
+    }
+
+    @Override public synchronized Long incr(final String key) throws WrongTypeException, NotIntegerException {
+        return decrby(key, -1);
+    }
+
+    @Override public synchronized Long incrby(final String key, final long increment) throws WrongTypeException, NotIntegerException {
+        return decrby(key, -increment);
+    }
+
+    @Override public synchronized String incrbyfloat(final String key, final double increment) throws WrongTypeException, NotFloatException {
+        Double newValue = 0.0d;
+        try {
+            if (!exists(key)) {
+                set(key, "0.0");
+            }
+            checkType(key, "string");
+            double asDouble = Double.parseDouble(get(key));
+            newValue = asDouble + increment;
+            set(key, String.valueOf(newValue));
+        }
+        catch (NumberFormatException nfe) {
+            throw new NotFloatException();
+        }
+        catch (SyntaxErrorException see) {
+        }
+        return String.valueOf(newValue);
+    }
+
+    @Override public synchronized String[] mget(final String ... keys) {
+        String[] gets = new String[keys.length];
+        for (int idx = 0; idx < keys.length; ++idx) {
+            try {
+                gets[idx] = get(keys[idx]);
+            }
+            catch (WrongTypeException e) {
+                gets[idx] = null;
+            }
+        }
+        return gets;
+    }
+
+    @Override public synchronized String mset(final String ... keyvalues) throws ArgException {
+        if (keyvalues.length == 0 || keyvalues.length % 2 != 0) {
+            throw new ArgException("mset");
+        }
+        for (int idx = 0; idx < keyvalues.length; ++idx) {
+            if (idx % 2 != 0) {
+                continue;
+            }
+            try {
+                set(keyvalues[idx], keyvalues[idx + 1]);
+            }
+            catch (SyntaxErrorException e) {
+            }
+        }
+        return "OK";
+    }
+
+    @Override public synchronized Boolean msetnx(final String ... keyvalues) throws ArgException {
+        if (keyvalues.length == 0 || keyvalues.length % 2 != 0) {
+            throw new ArgException("msetnx");
+        }
+        for (int idx = 0; idx < keyvalues.length; ++idx) {
+            if (idx % 2 != 0) {
+                continue;
+            }
+            if (exists(keyvalues[idx])) {
+                return false;
+            }
+        }
+        for (int idx = 0; idx < keyvalues.length; ++idx) {
+            if (idx % 2 != 0) {
+                continue;
+            }
+            try {
+                set(keyvalues[idx], keyvalues[idx + 1]);
+            }
+            catch (SyntaxErrorException e) {
+            }
+        }
+        return true;
+    }
+
+    @Override public synchronized String psetex(String key, long milliseconds, String value) {
+        try {
+            set(key, value, "px", String.valueOf(milliseconds));
+        }
+        catch (SyntaxErrorException e) {
+        }
+        return "OK";
     }
 
     @Override public synchronized String set(final String key, final String value, String ... options) throws SyntaxErrorException {
@@ -407,13 +498,100 @@ public final class RedisMock extends AbstractRedisMock {
         return "OK";
     }
 
+    @Override public synchronized Long setbit(final String key, final long offset, final boolean value) throws WrongTypeException {
+        checkType(key, "string");
+        if (!exists(key)) {
+            try {
+                set(key, "");
+            }
+            catch (SyntaxErrorException e) {
+            }
+        }
+        int byteIdx = (int)Math.floor(offset/8L);
+        int bitIdx = (int)(offset % 8L);
+        String val = get(key);
+        while (val.length() < byteIdx + 1) {
+            val += "\0";
+        }
+        int code = val.codePointAt(byteIdx);
+        int idx = 0;
+        int mask = 0x80;
+        while (idx < bitIdx) {
+            mask >>= 1;
+            idx += 1;
+        }
+        int bit = (code & mask) == 0 ? 0 : 1;
+        if (!value) {
+            code = code & (~mask);
+        }
+        else {
+            code = code | mask;
+        }
+        String newVal = "";
+        newVal += val.substring(0, byteIdx);
+        newVal += (char)(code);
+        newVal += val.substring(byteIdx + 1);
+        try {
+            set(key, newVal);
+        }
+        catch (SyntaxErrorException e) {
+        }
+        return (long)bit;
+    }
+
+    @Override public synchronized String setex(final String key, final int seconds, final String value) {
+        try {
+            set(key, value, "ex", String.valueOf(seconds));
+        }
+        catch (SyntaxErrorException e) {
+        }
+        return "OK";
+    }
+
+    @Override public synchronized Long setnx(final String key, final String value) {
+        if (!exists(key)) {
+            try {
+                set(key, value);
+                return 1L;
+            }
+            catch (SyntaxErrorException e) {
+            }
+        }
+        return 0L;
+    }
+
+    @Override public synchronized Long setrange(final String key, final long offset, final String value) throws WrongTypeException {
+        checkType(key, "string");
+        if (!exists(key)) {
+            try {
+                set(key, "");
+            }
+            catch (SyntaxErrorException e) {
+            }
+        }
+        String val = get(key);
+        int idx;
+        for (idx = val.length(); idx < (int)(offset + value.length()); ++idx) {
+            val += "\0";
+        }
+        String newValue = val.substring(0, (int)offset);
+        for (idx = (int)offset; idx < (int)(offset + value.length()); ++idx) {
+            newValue += value.charAt(idx - (int)offset);
+        }
+        newValue += val.substring((int)(offset + value.length()));
+        try {
+            set(key, newValue);
+        }
+        catch (SyntaxErrorException e) {
+        }
+        return (long)newValue.length();
+    }
+
     @Override public synchronized Long strlen(final String key) throws WrongTypeException {
         if (!exists(key)) {
             return 0L;
         }
-        if (type(key) != "string") {
-            throw new WrongTypeException();
-        }
+        checkType(key, "string");
         return (long)stringCache.get(key).length();
     }
 

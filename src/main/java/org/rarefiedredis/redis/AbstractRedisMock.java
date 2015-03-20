@@ -147,23 +147,23 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public String incrbyfloat(String key, float increment) throws WrongTypeException, NotFloatException, NotImplementedException {
+    @Override public String incrbyfloat(String key, double increment) throws WrongTypeException, NotFloatException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String mget(String ... keys) throws NotImplementedException {
+    @Override public String[] mget(String ... keys) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String mset(String ... keyvalues) throws NotImplementedException {
+    @Override public String mset(String ... keyvalues) throws ArgException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String msetnx(String ... keyvalues) throws NotImplementedException {
+    @Override public Boolean msetnx(String ... keyvalues) throws ArgException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String psetex(String key, int milliseconds, String value) throws NotImplementedException {
+    @Override public String psetex(String key, long milliseconds, String value) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -171,7 +171,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public Long setbit(String key, long offset, boolean value) throws NotImplementedException {
+    @Override public Long setbit(String key, long offset, boolean value) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
