@@ -52,4 +52,73 @@ public class RedisMockListTest {
         assertEquals(v1, redis.lindex(k, -3L));
     }
 
+    @Test public void linsertShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        assertEquals(0L, (long)redis.linsert("key", "before", "x", "y"));
+        assertEquals(0L, (long)redis.linsert("key", "after", "x", "y"));
+    }
+
+    @Test public void linsertShouldReturnNegOneForPivotThatIsNotInTheList() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.lpush(k, v);
+        assertEquals(-1L, (long)redis.linsert(k, "before", "x", "y"));
+        assertEquals(-1L, (long)redis.linsert(k, "after", "x", "y"));
+    }
+
+    @Test public void linsertShouldThrowAnErrorIfKeyIsNotAList() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.linsert(k, "before", "x", "y");
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void linsertShouldInsertTheValueBeforeThePivot() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
+        redis.rpush(k, v2);
+        redis.rpush(k, v4);
+        assertEquals(3L, (long)redis.linsert(k, "before", v4, v3));
+        assertEquals(v3, redis.lindex(k, 1L));
+        assertEquals(v2, redis.lindex(k, 0L));
+        assertEquals(v4, redis.lindex(k, 2L));
+        assertEquals(3L, (long)redis.llen(k));
+        assertEquals(4L, (long)redis.linsert(k, "before", v2, v1));
+        assertEquals(v1, redis.lindex(k, 0L));
+        assertEquals(v2, redis.lindex(k, 1L));
+        assertEquals(v3, redis.lindex(k, 2L));
+        assertEquals(v4, redis.lindex(k, 3L));
+    }
+
+    @Test public void linsertShouldInsertTheValueAfterThePivot() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
+        redis.rpush(k, v1);
+        redis.rpush(k, v3);
+        assertEquals(3L, (long)redis.linsert(k, "after", v3, v4));
+        assertEquals(v4, redis.lindex(k, 2L));
+        assertEquals(v3, redis.lindex(k, 1L));
+        assertEquals(v1, redis.lindex(k, 0L));
+        assertEquals(3L, (long)redis.llen(k));
+        assertEquals(4L, (long)redis.linsert(k, "after", v1, v2));
+        assertEquals(v2, redis.lindex(k, 1L));
+        assertEquals(v1, redis.lindex(k, 0L));
+        assertEquals(v3, redis.lindex(k, 2L));
+        assertEquals(v4, redis.lindex(k, 3L));
+        assertEquals(4L, (long)redis.llen(k));
+    }
+
 }
