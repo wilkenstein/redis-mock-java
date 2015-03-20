@@ -602,12 +602,20 @@ public final class RedisMock extends AbstractRedisMock {
 
     /* IRedisList implementations */
 
-    @Override public synchronized String lindex(final String key, final long index) throws WrongTypeException {
+    @Override public synchronized String lindex(final String key, long index) throws WrongTypeException {
         if (!exists(key)) {
             return null;
         }
         checkType(key, "list");
-        return listCache.get(key).get((int)index);
+        if (index < 0) {
+            index = listCache.get(key).size() + index;
+        }
+        try {
+            return listCache.get(key).get((int)index);
+        }
+        catch (IndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     @Override public synchronized Long linsert(final String key, String before_after, final String pivot, final String value) throws WrongTypeException {
