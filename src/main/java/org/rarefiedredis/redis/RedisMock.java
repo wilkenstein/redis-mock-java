@@ -668,9 +668,12 @@ public final class RedisMock extends AbstractRedisMock {
         }
     }
 
-    @Override public synchronized Long lpush(final String key, final String element) throws WrongTypeException {
+    @Override public synchronized Long lpush(final String key, final String element, final String ... elements) throws WrongTypeException {
         checkType(key, "list");
         listCache.set(key, element, 0);
+        for (String elem : elements) {
+            listCache.set(key, elem, 0);
+        }
         return llen(key);
     }
 
@@ -703,6 +706,9 @@ public final class RedisMock extends AbstractRedisMock {
         }
         if (end > len - 1) {
             end = len - 1;
+        }
+        if (start < 0 || end < 0) {
+            return new String[0];
         }
         List<String> sublist = lst.subList((int)start, (int)(end + 1L));
         String[] ret = new String[sublist.size()];
@@ -784,9 +790,12 @@ public final class RedisMock extends AbstractRedisMock {
         return element;
     }
 
-    @Override public synchronized Long rpush(final String key, final String element) throws WrongTypeException {
+    @Override public synchronized Long rpush(final String key, final String element, final String ... elements) throws WrongTypeException {
         checkType(key, "list");
         listCache.set(key, element);
+        for (String elem : elements) {
+            listCache.set(key, elem);
+        }
         return llen(key);
     }
 

@@ -209,7 +209,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public Long lpush(String key, String element) throws WrongTypeException, NotImplementedException {
+    @Override public Long lpush(String key, String element, String ... elements) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -241,7 +241,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public Long rpush(String key, String element) throws WrongTypeException, NotImplementedException {
+    @Override public Long rpush(String key, String element, String ... elements) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

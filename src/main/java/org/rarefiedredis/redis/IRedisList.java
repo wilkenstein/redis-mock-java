@@ -8,7 +8,7 @@ public interface IRedisList {
 
     String lpop(String key) throws WrongTypeException, NotImplementedException;
 
-    Long lpush(String key, String element) throws WrongTypeException, NotImplementedException;
+    Long lpush(String key, String element, String ... elements) throws WrongTypeException, NotImplementedException;
 
     Long lpushx(String key, String element) throws WrongTypeException, NotImplementedException;
 
@@ -24,7 +24,7 @@ public interface IRedisList {
 
     String rpoplpush(String source, String dest) throws WrongTypeException, NotImplementedException;
 
-    Long rpush(String key, String element) throws WrongTypeException, NotImplementedException;
+    Long rpush(String key, String element, String ... elements) throws WrongTypeException, NotImplementedException;
 
     Long rpushx(String key, String element) throws WrongTypeException, NotImplementedException;
 
