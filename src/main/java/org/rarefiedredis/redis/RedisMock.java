@@ -602,18 +602,38 @@ public final class RedisMock extends AbstractRedisMock {
 
     /* IRedisList implementations */
 
-    @Override public synchronized Long lpush(final String key, final String element) throws WrongTypeException {
-        if (exists(key) && type(key) != "list") {
-            throw new WrongTypeException();
+    @Override public synchronized String lindex(final String key, final long index) throws WrongTypeException {
+        if (!exists(key)) {
+            return null;
         }
-        listCache.set(key, element);
-        return llen(key);
+        checkType(key, "list");
+        return listCache.get(key).get((int)index);
+    }
+
+    @Override public synchronized Long linsert(final String key, String before_after, final String pivot, final String value) throws WrongTypeException {
+        if (!exists(key)) {
+            return 0L;
+        }
+        checkType(key, "list");
+        int index = listCache.get(key).indexOf(pivot);
+        before_after = before_after.toLowerCase();
+        if (index != -1) {
+            if (before_after.equals("before")) {
+                listCache.set(key, value, index);
+            }
+            else if (before_after.equals("after")) {
+                listCache.set(key, value, index + 1);
+            }
+            return (long)llen(key);
+        }
+        return -1L;
     }
 
     @Override public synchronized Long llen(final String key) throws WrongTypeException {
-        if (exists(key) && type(key) != "list") {
-            throw new WrongTypeException();
+        if (!exists(key)) {
+            return 0L;
         }
+        checkType(key, "list");
         List<String> lst = listCache.get(key);
         Long len = 0L;
         int size = lst.size();
@@ -625,6 +645,144 @@ public final class RedisMock extends AbstractRedisMock {
             }
         }
         return len;
+    }
+
+    @Override public synchronized String lpop(final String key) throws WrongTypeException {
+        if (!exists(key)) {
+            return null;
+        }
+        checkType(key, "list");
+        return listCache.get(key).remove(0);
+    }
+
+    @Override public synchronized Long lpush(final String key, final String element) throws WrongTypeException {
+        checkType(key, "list");
+        listCache.set(key, element, 0);
+        return llen(key);
+    }
+
+    @Override public synchronized Long lpushx(final String key, final String element) throws WrongTypeException {
+        if (!exists(key)) {
+            return 0L;
+        }
+        checkType(key, "list");
+        return lpush(key, element);
+    }
+
+    @Override public synchronized String[] lrange(final String key, long start, long end) throws WrongTypeException {
+        if (!exists(key)) {
+            return new String[0];
+        }
+        checkType(key, "list");
+        List<String> lst = listCache.get(key);
+        int len = lst.size();
+        if (start < 0) {
+            start = len + start;
+        }
+        if (end < 0) {
+            end = len + end;
+        }
+        if (start > end) {
+            return new String[0];
+        }
+        if (start > lst.size() - 1) {
+            return new String[0];
+        }
+        if (end > len - 1) {
+            end = len - 1;
+        }
+        List<String> sublist = lst.subList((int)start, (int)(end + 1L));
+        String[] ret = new String[sublist.size()];
+        for (int idx = 0; idx < ret.length; ++idx) {
+            ret[idx] = sublist.get(idx);
+        }
+        return ret;
+    }
+
+    @Override public synchronized Long lrem(final String key, final long count, final String element) throws WrongTypeException {
+        if (!exists(key)) {
+            return 0L;
+        }
+        checkType(key, "list");
+        long cnt = 0L;
+        while (listCache.get(key).remove(element)) {
+            cnt += 1;
+            if (count > 0 && cnt == count) {
+                break;
+            }
+        }
+        if (listCache.get(key).size() == 0) {
+            del(key);
+        }
+        return cnt;
+    }
+
+    @Override public synchronized String lset(final String key, final long index, final String element) throws WrongTypeException, NoKeyException, IndexOutOfRangeException {
+        if (!exists(key)) {
+            throw new NoKeyException();
+        }
+        if (index >= listCache.get(key).size()) {
+            throw new IndexOutOfRangeException();
+        }
+        listCache.get(key).set((int)index, element);
+        return "OK";
+    }
+
+    @Override public synchronized String ltrim(final String key, long start, long end) throws WrongTypeException {
+        if (!exists(key)) {
+            return "OK";
+        }
+        checkType(key, "list");
+        int len = listCache.get(key).size();
+        if (start < 0) {
+            start = len + start;
+        }
+        if (end < 0) {
+            end = len + start;
+        }
+        if (start > len || start > end) {
+            del(key);
+            return "OK";
+        }
+        if (end > len - 1) {
+            end = len - 1;
+        }
+        List<String> trimmed = listCache.get(key).subList((int)start, (int)(end + 1L));
+        listCache.get(key).retainAll(trimmed);
+        return "OK";
+    }
+
+    @Override public synchronized String rpop(final String key) throws WrongTypeException {
+        if (!exists(key)) {
+            return null;
+        }
+        checkType(key, "list");
+        return listCache.get(key).remove(listCache.get(key).size() - 1);
+    }
+
+    @Override public synchronized String rpoplpush(final String source, final String dest) throws WrongTypeException {
+        if (!exists(source)) {
+            return null;
+        }
+        checkType(source, "list");
+        checkType(dest, "list");
+        String element = rpop(source);
+        lpush(dest, element);
+        return element;
+    }
+
+    @Override public synchronized Long rpush(final String key, final String element) throws WrongTypeException {
+        checkType(key, "list");
+        listCache.set(key, element);
+        return llen(key);
+    }
+
+    @Override public synchronized Long rpushx(final String key, final String element) throws WrongTypeException {
+        if (!exists(key)) {
+            return 0L;
+        }
+        checkType(key, "list");
+        return rpush(key, element);
     }
 
 }

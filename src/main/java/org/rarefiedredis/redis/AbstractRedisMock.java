@@ -225,7 +225,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public String lset(String key, long index, String element) throws WrongTypeException, NotImplementedException {
+    @Override public String lset(String key, long index, String element) throws WrongTypeException, NoKeyException, IndexOutOfRangeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

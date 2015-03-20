@@ -25,8 +25,8 @@ under the License.
     <language>en-us</language>
     <copyright>&#169;2015</copyright>
     <item>
-      <title>File: 23,
-             Errors: 734,
+      <title>File: 25,
+             Errors: 750,
              Warnings: 0,
              Infos: 0
       </title>
@@ -55,21 +55,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  154
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisTransaction.java">org/rarefiedredis/redis/IRedisTransaction.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  11
+                  181
                 </td>
               </tr>
                           <tr>
@@ -116,20 +102,6 @@ under the License.
               </tr>
                           <tr>
                 <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisString.java">org/rarefiedredis/redis/IRedisString.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  41
-                </td>
-              </tr>
-                          <tr>
-                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.RedisHashCache.java">org/rarefiedredis/redis/RedisHashCache.java</a>
                 </td>
                 <td>
@@ -154,48 +126,6 @@ under the License.
                 </td>
                 <td>
                   0
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotFloatException.java">org/rarefiedredis/redis/NotFloatException.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  3
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotIntegerException.java">org/rarefiedredis/redis/NotIntegerException.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  3
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.RedisStringCache.java">org/rarefiedredis/redis/RedisStringCache.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  1
                 </td>
               </tr>
                           <tr>
@@ -228,35 +158,7 @@ under the License.
               </tr>
                           <tr>
                 <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisKeys.java">org/rarefiedredis/redis/IRedisKeys.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  56
-                </td>
-              </tr>
-                          <tr>
-                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.SetbitException.java">org/rarefiedredis/redis/SetbitException.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  3
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.BitArgException.java">org/rarefiedredis/redis/BitArgException.java</a>
                 </td>
                 <td>
                   0
@@ -279,7 +181,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  44
+                  27
                 </td>
               </tr>
                           <tr>
@@ -294,20 +196,6 @@ under the License.
                 </td>
                 <td>
                   3
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.AbstractRedisMock.java">org/rarefiedredis/redis/AbstractRedisMock.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  235
                 </td>
               </tr>
                           <tr>
@@ -364,6 +252,146 @@ under the License.
                 </td>
                 <td>
                   13
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisTransaction.java">org/rarefiedredis/redis/IRedisTransaction.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  11
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisString.java">org/rarefiedredis/redis/IRedisString.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  41
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotFloatException.java">org/rarefiedredis/redis/NotFloatException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IndexOutOfRangeException.java">org/rarefiedredis/redis/IndexOutOfRangeException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotIntegerException.java">org/rarefiedredis/redis/NotIntegerException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.RedisStringCache.java">org/rarefiedredis/redis/RedisStringCache.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  1
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NoKeyException.java">org/rarefiedredis/redis/NoKeyException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisKeys.java">org/rarefiedredis/redis/IRedisKeys.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  56
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.BitArgException.java">org/rarefiedredis/redis/BitArgException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.AbstractRedisMock.java">org/rarefiedredis/redis/AbstractRedisMock.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  235
                 </td>
               </tr>
                       </tbody>

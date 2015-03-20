@@ -57,4 +57,7 @@ $ mvn test
   - HyperLogLog support.
 
 ## Versions
-None yet
+
+* 0.0.1
+  - All string commands implemented.
+  - All string commands unit-tested.
