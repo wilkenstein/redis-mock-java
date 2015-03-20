@@ -121,4 +121,79 @@ public class RedisMockListTest {
         assertEquals(4L, (long)redis.llen(k));
     }
 
+    @Test public void llenShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        assertEquals(0L, (long)redis.llen("key"));
+    }
+
+    @Test public void llenShouldThrowAnErrorIfKeyIsNotAList() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.llen(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void llenShouldReturnListLength() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        assertEquals(0L, (long)redis.llen(k));
+        redis.rpush(k, v1);
+        assertEquals(1L, (long)redis.llen(k));
+        redis.rpush(k, v2);
+        assertEquals(2L, (long)redis.llen(k));
+        redis.rpush(k, v3);
+        assertEquals(3L, (long)redis.llen(k));
+    }
+
+    @Test public void lpopShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        assertEquals(null, redis.lpop("key"));
+    }
+
+    @Test public void lpopShouldThrowAnErrorIfKeyIsNotAList() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.lpop(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void lpopShouldReturnAndPopLeftElementOfTheList() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "value", v2 = "value", v3 = "value3";
+        redis.rpush(k, v1);
+        redis.rpush(k, v2);
+        redis.rpush(k, v3);
+        assertEquals(v1, redis.lpop(k));
+        assertEquals(2L, (long)redis.llen(k));
+        assertEquals(v2, redis.lindex(k, 0L));
+        assertEquals(v2, redis.lpop(k));
+        assertEquals(1L, (long)redis.llen(k));
+        assertEquals(v3, redis.lindex(k, 0L));
+        assertEquals(v3, redis.lpop(k));
+        assertEquals(0L, (long)redis.llen(k));
+        assertEquals(null, redis.lpop(k));
+    }
+
 }

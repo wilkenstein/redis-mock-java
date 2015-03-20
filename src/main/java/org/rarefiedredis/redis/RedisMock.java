@@ -660,7 +660,12 @@ public final class RedisMock extends AbstractRedisMock {
             return null;
         }
         checkType(key, "list");
-        return listCache.get(key).remove(0);
+        try {
+            return listCache.get(key).remove(0);
+        }
+        catch (IndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     @Override public synchronized Long lpush(final String key, final String element) throws WrongTypeException {
