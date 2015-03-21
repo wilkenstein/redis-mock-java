@@ -661,7 +661,11 @@ public final class RedisMock extends AbstractRedisMock {
         }
         checkType(key, "list");
         try {
-            return listCache.get(key).remove(0);
+            String popped = listCache.get(key).remove(0);
+            if (listCache.get(key).isEmpty()) {
+                del(key);
+            }
+            return popped;
         }
         catch (IndexOutOfBoundsException e) {
             return null;
@@ -740,6 +744,7 @@ public final class RedisMock extends AbstractRedisMock {
         if (!exists(key)) {
             throw new NoKeyException();
         }
+        checkType(key, "list");
         if (index >= listCache.get(key).size()) {
             throw new IndexOutOfRangeException();
         }
@@ -753,18 +758,21 @@ public final class RedisMock extends AbstractRedisMock {
         }
         checkType(key, "list");
         int len = listCache.get(key).size();
+        if (start > len || start > end) {
+            del(key);
+            return "OK";
+        }
         if (start < 0) {
             start = len + start;
         }
         if (end < 0) {
             end = len + start;
         }
-        if (start > len || start > end) {
-            del(key);
-            return "OK";
-        }
         if (end > len - 1) {
             end = len - 1;
+        }
+        if (start < 0 || end < 0) {
+            return "OK";
         }
         List<String> trimmed = listCache.get(key).subList((int)start, (int)(end + 1L));
         listCache.get(key).retainAll(trimmed);
@@ -776,7 +784,16 @@ public final class RedisMock extends AbstractRedisMock {
             return null;
         }
         checkType(key, "list");
-        return listCache.get(key).remove(listCache.get(key).size() - 1);
+        try {
+            String popped = listCache.get(key).remove(listCache.get(key).size() - 1);
+            if (listCache.get(key).isEmpty()) {
+                del(key);
+            }
+            return popped;
+        }
+        catch (IndexOutOfBoundsException ie) {
+            return null;
+        }
     }
 
     @Override public synchronized String rpoplpush(final String source, final String dest) throws WrongTypeException {
