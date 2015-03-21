@@ -58,6 +58,9 @@ $ mvn test
 
 ## Versions
 
+* 0.0.2
+  - All list commands implemented.
+  - All list commands unit-tested. 
 * 0.0.1
   - All string commands implemented.
   - All string commands unit-tested.
