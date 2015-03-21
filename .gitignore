@@ -13,3 +13,6 @@ hs_err_pid*
 
 # Emacs auto-generate files
 *~
+
+# Ignore settings.xml
+settings.xml
