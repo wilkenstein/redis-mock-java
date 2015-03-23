@@ -1,3 +1,5 @@
+import java.util.List;
+
 public interface IRedisList {
 
     String lindex(String key, long index) throws WrongTypeException, NotImplementedException;
@@ -12,7 +14,7 @@ public interface IRedisList {
 
     Long lpushx(String key, String element) throws WrongTypeException, NotImplementedException;
 
-    String[] lrange(String key, long start, long end) throws WrongTypeException, NotImplementedException;
+    List<String> lrange(String key, long start, long end) throws WrongTypeException, NotImplementedException;
 
     Long lrem(String key, long count, String element) throws WrongTypeException, NotImplementedException;
 

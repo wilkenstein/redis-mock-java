@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.Date;
 
-public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
+public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, IRedisSet {
 
     public AbstractRedisMock() {
     }
@@ -217,7 +217,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
         throw new NotImplementedException();
     }
 
-    @Override public String[] lrange(String key, long start, long end) throws WrongTypeException, NotImplementedException {
+    @Override public List<String> lrange(String key, long start, long end) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -246,6 +246,68 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList {
     }
 
     @Override public Long rpushx(String key, String element) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    /* IRedisSetCommands */
+
+    @Override public Long sadd(String key, String member, String ... members) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long scard(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<String> sdiff(String key, String ... keys) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long sdiffstore(String destination, String key, String ... keys) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<String> sinter(String key, String ... keys)  throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long sinterstore(String destination, String key, String ... keys) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Boolean sismember(String key, String member) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<String> smembers(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Boolean smove(String source, String dest, String member) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String spop(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String srandmember(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long srem(String key, String member, String ... members) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<String> sunion(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long sunionstore(String destination, String key, String ... keys) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<String> sscan(String key, Long cursor) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

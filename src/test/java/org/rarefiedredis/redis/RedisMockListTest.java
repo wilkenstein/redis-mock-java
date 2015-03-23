@@ -2,6 +2,8 @@ import org.junit.Test;
 import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
+
 public class RedisMockListTest {
 
     @Test public void lindexShouldReturnNothingForKeyThatDoesNotExist() throws WrongTypeException {
@@ -290,10 +292,10 @@ public class RedisMockListTest {
         String k = "key";
         String v = "value";
         redis.lpush(k, v);
-        assertEquals(0, redis.lrange(k, 1L, 0L).length);
-        assertEquals(0, redis.lrange(k, 1L, 2L).length);
-        assertEquals(0, redis.lrange(k, -3L, -2L).length);
-        assertEquals(0, redis.lrange(k, -2L, -3L).length);
+        assertEquals(0, redis.lrange(k, 1L, 0L).size());
+        assertEquals(0, redis.lrange(k, 1L, 2L).size());
+        assertEquals(0, redis.lrange(k, -3L, -2L).size());
+        assertEquals(0, redis.lrange(k, -2L, -3L).size());
     }
 
     @Test public void lrangeShouldReturnTheRangeForInRangeIndices() throws WrongTypeException {
@@ -301,19 +303,19 @@ public class RedisMockListTest {
         String k = "key";
         String v1 = "v1", v2 = "v2", v3 = "v3";
         redis.rpush(k, v1, v2, v3);
-        String[] range = redis.lrange(k, 0L, -1L);
-        assertEquals(3, range.length);
-        assertEquals(v1, range[0]);
-        assertEquals(v2, range[1]);
-        assertEquals(v3, range[2]);
+        List<String> range = redis.lrange(k, 0L, -1L);
+        assertEquals(3, range.size());
+        assertEquals(v1, range.get(0));
+        assertEquals(v2, range.get(1));
+        assertEquals(v3, range.get(2));
         range = redis.lrange(k, 1L, 2L);
-        assertEquals(2, range.length);
-        assertEquals(v2, range[0]);
-        assertEquals(v3, range[1]);
+        assertEquals(2, range.size());
+        assertEquals(v2, range.get(0));
+        assertEquals(v3, range.get(1));
         range = redis.lrange(k, -3L, -2L);
-        assertEquals(2, range.length);
-        assertEquals(v1, range[0]);
-        assertEquals(v2, range[1]);
+        assertEquals(2, range.size());
+        assertEquals(v1, range.get(0));
+        assertEquals(v2, range.get(1));
     }
 
     @Test public void lremShouldThrowAnErrorIfKeyIsNotAList() throws WrongTypeException, SyntaxErrorException {

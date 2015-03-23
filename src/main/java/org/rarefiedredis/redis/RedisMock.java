@@ -2,9 +2,12 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Collections;
 
 /**
  * An in-memory redis-compatible key-value cache and store written
@@ -689,9 +692,9 @@ public final class RedisMock extends AbstractRedisMock {
         return lpush(key, element);
     }
 
-    @Override public synchronized String[] lrange(final String key, long start, long end) throws WrongTypeException {
+    @Override public synchronized List<String> lrange(final String key, long start, long end) throws WrongTypeException {
         if (!exists(key)) {
-            return new String[0];
+            return new ArrayList<String>();
         }
         checkType(key, "list");
         List<String> lst = listCache.get(key);
@@ -703,23 +706,18 @@ public final class RedisMock extends AbstractRedisMock {
             end = len + end;
         }
         if (start > end) {
-            return new String[0];
+            return new ArrayList<String>();
         }
         if (start > lst.size() - 1) {
-            return new String[0];
+            return new ArrayList<String>();
         }
         if (end > len - 1) {
             end = len - 1;
         }
         if (start < 0 || end < 0) {
-            return new String[0];
+            return new ArrayList<String>();
         }
-        List<String> sublist = lst.subList((int)start, (int)(end + 1L));
-        String[] ret = new String[sublist.size()];
-        for (int idx = 0; idx < ret.length; ++idx) {
-            ret[idx] = sublist.get(idx);
-        }
-        return ret;
+        return lst.subList((int)start, (int)(end + 1L));
     }
 
     @Override public synchronized Long lrem(final String key, final long count, final String element) throws WrongTypeException {
@@ -822,6 +820,108 @@ public final class RedisMock extends AbstractRedisMock {
         }
         checkType(key, "list");
         return rpush(key, element);
+    }
+
+    /* IRedisSet implementations */
+
+    @Override public synchronized Long sadd(final String key, final String member, final String ... members) throws WrongTypeException {
+        checkType(key, "set");
+        Long count = 0L;
+        if (!setCache.exists(key) || !setCache.get(key).contains(member)) {
+            setCache.set(key, member);
+            count += 1L;
+        }
+        for (String memb : members) {
+            if (!setCache.exists(key) || !setCache.get(key).contains(memb)) {
+                setCache.set(key, memb);
+                count += 1L;
+            }
+        }
+        return count;
+    }
+
+    @Override public synchronized Long scard(String key) throws WrongTypeException {
+        checkType(key, "set");
+        if (!setCache.exists(key)) {
+            return 0L;
+        }
+        return (long)setCache.get(key).size();
+    }
+
+    @Override public synchronized Set<String> sdiff(String key, String ... keys) throws WrongTypeException {
+        checkType(key, "set");
+        for (String k : keys) {
+            checkType(k, "set");
+        }
+        Set<String> diff = new HashSet<String>(smembers(key));
+        for (String k : keys) {
+            diff.removeAll(smembers(k));
+        }
+        return diff;
+    }
+
+    @Override public synchronized Long sdiffstore(String destination, String key, String ... keys) throws WrongTypeException {
+        Set<String> diff = sdiff(key, keys);
+        if (exists(destination)) {
+            del(destination);
+        }
+        for (String d : diff) {
+            sadd(destination, d);
+        }
+        return (long)diff.size();
+    }
+
+    @Override public synchronized Set<String> sinter(String key, String ... keys) throws WrongTypeException {
+        checkType(key, "set");
+        for (String k : keys) {
+            checkType(k, "set");
+        }
+        Set<String> inter = new HashSet<String>(smembers(key));
+        for (String k : keys) {
+            inter.retainAll(smembers(k));
+        }
+        return inter;
+    }
+
+    @Override public synchronized Long sinterstore(String destination, String key, String ... keys) throws WrongTypeException {
+        Set<String> inter = sinter(key, keys);
+        if (exists(destination)) {
+            del(destination);
+        }
+        for (String i : inter) {
+            sadd(destination, i);
+        }
+        return (long)inter.size();
+    }
+
+    @Override public synchronized Boolean sismember(String key, String member) throws WrongTypeException {
+        checkType(key, "set");
+        if (!setCache.exists(key)) {
+            return false;
+        }
+        return setCache.get(key).contains(member);
+    }
+
+    @Override public synchronized Set<String> smembers(String key) throws WrongTypeException {
+        checkType(key, "set");
+        return Collections.unmodifiableSet(setCache.get(key));
+    }
+
+    @Override public synchronized Long srem(String key, String member, String ... members) throws WrongTypeException {
+        checkType(key, "set");
+        if (!setCache.exists(key)) {
+            return 0L;
+        }
+        Long count = 0L;
+        if (setCache.removeValue(key, member)) {
+            count += 1L;
+        }
+        for (String memb : members) {
+            if (setCache.removeValue(key, memb)) {
+                count += 1L;
+            }
+        }
+        return count;
     }
 
 }
