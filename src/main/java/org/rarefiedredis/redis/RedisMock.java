@@ -904,7 +904,32 @@ public final class RedisMock extends AbstractRedisMock {
 
     @Override public synchronized Set<String> smembers(String key) throws WrongTypeException {
         checkType(key, "set");
+        if (!exists(key)) {
+            return Collections.unmodifiableSet(new HashSet<String>());
+        }
         return Collections.unmodifiableSet(setCache.get(key));
+    }
+
+    @Override public synchronized Boolean smove(String source, String dest, String member) throws WrongTypeException {
+        checkType(source, "set");
+        checkType(dest, "set");
+        Long rem = srem(source, member);
+        if (rem == 0L) {
+            return false;
+        }
+        sadd(dest, member);
+        return (rem == 1L ? true : false);
+    }
+
+    @Override public synchronized String spop(String key) throws WrongTypeException {
+        checkType(key, "set");
+        if (exists(key)) {
+            for (String member : setCache.get(key)) {
+                srem(key, member);
+                return member;
+            }
+        }
+        return null;
     }
 
     @Override public synchronized Long srem(String key, String member, String ... members) throws WrongTypeException {

@@ -349,4 +349,130 @@ public class RedisMockSetTest {
         assertEquals(true, redis.sismember(k, v));
     }
 
+    @Test public void smembersShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.smembers(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void smembersShouldReturnEmptySetIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        Set<String> members = redis.smembers(k);
+        assertEquals(0, members.size());
+    }
+    
+    @Test public void smembersShouldReturnTheSetMembers() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        redis.sadd(k, v1, v2, v3);
+        Set<String> members = redis.smembers(k);
+        assertEquals(3, members.size());
+        assertEquals(true, members.contains(v1));
+        assertEquals(true, members.contains(v2));
+        assertEquals(true, members.contains(v3));
+    }
+
+    @Test public void smoveShouldThrowAnErrorIfSouceKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k1 = "k1", k2 = "k2";
+        String v = "v";
+        redis.set(k1, v);
+        try {
+            redis.smove(k1, k2, v);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void smoveShouldThrowAnErrorIfDestKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k1 = "k1", k2 = "k2";
+        String v = "v";
+        redis.sadd(k1, v);
+        redis.set(k2, v);
+        try {
+            redis.smove(k1, k2, v);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void smoveShouldDoNothingIfTheElementIsNotInTheSourceSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k1 = "k1", k2 = "k2";
+        String v1 = "v1", v2 = "v2";
+        redis.sadd(k1, v1);
+        redis.sadd(k2, v2);
+        assertEquals(false, redis.smove(k1, k2, v2));
+        assertEquals(1L, (long)redis.scard(k1));
+        assertEquals(true, redis.sismember(k1, v1));
+        assertEquals(1L, (long)redis.scard(k2));
+        assertEquals(true, redis.sismember(k2, v2));
+        assertEquals(false, redis.sismember(k2, v1));
+        assertEquals(false, redis.smove(k2, k1, v1));
+        assertEquals(1L, (long)redis.scard(k1));
+        assertEquals(true, redis.sismember(k1, v1));
+        assertEquals(1L, (long)redis.scard(k2));
+        assertEquals(true, redis.sismember(k2, v2));
+        assertEquals(false, redis.sismember(k2, v1));
+    }
+
+    @Test public void smoveShouldMoveTheElementFromSourceToDestination() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k1 = "k1", k2 = "k2";
+        String v1 = "v1", v2 = "v2";
+        redis.sadd(k1, v1);
+        assertEquals(true, redis.smove(k1, k2, v1));
+        assertEquals(0L, (long)redis.scard(k1));
+        assertEquals(1L, (long)redis.scard(k2));
+        assertEquals(true, redis.sismember(k2, v1));
+        assertEquals(false, redis.sismember(k1, v1));
+        redis.sadd(k2, v2);
+        assertEquals(true, redis.smove(k2, k1, v2));
+        assertEquals(1L, (long)redis.scard(k1));
+        assertEquals(true, redis.sismember(k1, v2));
+        assertEquals(false, redis.sismember(k1, v1));
+        assertEquals(1L, (long)redis.scard(k2));
+        assertEquals(true, redis.sismember(k2, v1));
+        assertEquals(false, redis.sismember(k2, v2));
+    }
+
+    @Test public void spopShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.spop(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        assertEquals(false, true);
+    }
+
 }
