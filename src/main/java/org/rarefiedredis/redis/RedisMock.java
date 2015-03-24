@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 /**
  * An in-memory redis-compatible key-value cache and store written
@@ -922,14 +923,39 @@ public final class RedisMock extends AbstractRedisMock {
     }
 
     @Override public synchronized String spop(String key) throws WrongTypeException {
+        String member = srandmember(key);
+        if (member != null) {
+            srem(key, member);
+        }
+        return member;
+    }
+
+    @Override public synchronized String srandmember(String key) throws WrongTypeException {
         checkType(key, "set");
         if (exists(key)) {
             for (String member : setCache.get(key)) {
-                srem(key, member);
                 return member;
             }
         }
         return null;
+    }
+
+    @Override public synchronized List<String> srandmember(String key, long count) throws WrongTypeException {
+        boolean negative = (count < 0);
+        count = Math.abs(count);
+        List<String> lst = new ArrayList<String>((int)count);
+        while (lst.size() < (int)count) {
+            for (String member : setCache.get(key)) {
+                lst.add(member);
+                if (lst.size() == (int)count) {
+                    break;
+                }
+            }
+            if (!negative) {
+                break;
+            }
+        }
+        return lst;
     }
 
     @Override public synchronized Long srem(String key, String member, String ... members) throws WrongTypeException {
@@ -947,6 +973,61 @@ public final class RedisMock extends AbstractRedisMock {
             }
         }
         return count;
+    }
+
+    @Override public synchronized Set<String> sunion(String key, String ... keys) throws WrongTypeException {
+        checkType(key, "set");
+        for (String k : keys) {
+            checkType(k, "set");
+        }
+        Set<String> union = new HashSet<String>(smembers(key));
+        for (String k : keys) {
+            union.addAll(smembers(k));
+        }
+        return union;
+    }
+
+    @Override public synchronized Long sunionstore(String destination, String key, String ... keys) throws WrongTypeException {
+        Set<String> union = sunion(key, keys);
+        if (exists(destination)) {
+            del(destination);
+        }
+        for (String u : union) {
+            sadd(destination, u);
+        }
+        return (long)union.size();
+    }
+
+    @Override public synchronized ScanResult<Set<String>> sscan(String key, long cursor, String ... options) throws WrongTypeException {
+        checkType(key, "set");
+        Long count = null;
+        Pattern match = null;
+        for (int idx = 0; idx < options.length; ++idx) {
+            if (options[idx].equals("count")) {
+                count = Long.valueOf(options[idx + 1]);
+            }
+            else if (options[idx].equals("match")) {
+                match = Pattern.compile(GlobToRegEx.convertGlobToRegEx(options[idx + 1]));
+            }
+        }
+        if (count == null) {
+            count = 10L;
+        }
+        Set<String> scanned = new HashSet<String>();
+        Set<String> members = smembers(key);
+        Long idx = 0L;
+        for (String member : members) {
+            idx += 1;
+            if (idx > cursor) {
+                if (match == null || match.matcher(member).matches()) {
+                    scanned.add(member);
+                }
+                if ((long)scanned.size() >= count) {
+                    break;
+                }
+            }
+        }
+        return new ScanResult<Set<String>>(idx, scanned);
     }
 
 }

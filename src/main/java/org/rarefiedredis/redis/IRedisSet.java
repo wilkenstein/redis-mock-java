@@ -1,4 +1,5 @@
 import java.util.Set;
+import java.util.List;
 
 public interface IRedisSet {
 
@@ -24,12 +25,14 @@ public interface IRedisSet {
 
     String srandmember(String key) throws WrongTypeException, NotImplementedException;
 
+    List<String> srandmember(String key, long count) throws WrongTypeException, NotImplementedException;
+
     Long srem(String key, String member, String ... members) throws WrongTypeException, NotImplementedException;
 
-    Set<String> sunion(String key) throws WrongTypeException, NotImplementedException;
+    Set<String> sunion(String key, String ... keys) throws WrongTypeException, NotImplementedException;
 
     Long sunionstore(String destination, String key, String ... keys) throws WrongTypeException, NotImplementedException;
 
-    Set<String> sscan(String key, Long cursor) throws WrongTypeException, NotImplementedException;
+    ScanResult<Set<String>> sscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException;
 
 }

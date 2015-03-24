@@ -295,11 +295,15 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
         throw new NotImplementedException();
     }
 
+    @Override public List<String> srandmember(String key, long count) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
     @Override public Long srem(String key, String member, String ... members) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Set<String> sunion(String key) throws WrongTypeException, NotImplementedException {
+    @Override public Set<String> sunion(String key, String ... keys) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -307,7 +311,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
         throw new NotImplementedException();
     }
 
-    @Override public Set<String> sscan(String key, Long cursor) throws WrongTypeException, NotImplementedException {
+    @Override public ScanResult<Set<String>> sscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

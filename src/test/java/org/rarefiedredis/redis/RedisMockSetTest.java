@@ -3,6 +3,9 @@ import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
 
 public class RedisMockSetTest {
 
@@ -473,6 +476,433 @@ public class RedisMockSetTest {
             return;
         }
         assertEquals(false, true);
+    }
+
+    @Test public void spopShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        assertEquals(null, redis.spop(k));
+    }
+
+    @Test public void spopShouldRemoveARandomMemberFromTheSetAndReturnIt() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        List<String> arr = new ArrayList<String>();
+        arr.add(v1);
+        arr.add(v2);
+        arr.add(v3);
+        redis.sadd(k, v1, v2, v3);
+        assertEquals(true, arr.contains(redis.spop(k)));
+        assertEquals(2L, (long)redis.scard(k));
+        assertEquals(true, arr.contains(redis.spop(k)));
+        assertEquals(1L, (long)redis.scard(k));
+        assertEquals(true, arr.contains(redis.spop(k)));
+        assertEquals(0L, (long)redis.scard(k));
+    }
+
+    @Test public void srandmemberShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.srandmember(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void srandmemberShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals(null, redis.srandmember(k));
+    }
+
+    @Test public void srandmemberShouldReturnARandomMemberFromTheSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        List<String> arr = new ArrayList<String>();
+        arr.add(v1);
+        arr.add(v2);
+        arr.add(v3);
+        redis.sadd(k, v1, v2, v3);
+        assertEquals(true, arr.contains(redis.srandmember(k)));
+    }
+
+    @Test public void srandmemberShouldReturnCountRandomMembersFromTheSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        List<String> arr = new ArrayList<String>();
+        arr.add(v1);
+        arr.add(v2);
+        arr.add(v3);
+        redis.sadd(k, v1, v2, v3);
+        List<String> randos = redis.srandmember(k, 2L);
+        assertEquals(2, randos.size());
+        assertEquals(true, arr.contains(randos.get(0)));
+        assertEquals(true, arr.contains(randos.get(1)));
+        randos = redis.srandmember(k, 3L);
+        assertEquals(3, randos.size());
+        for (String rando : randos) {
+            assertEquals(true, arr.contains(rando));
+        }
+        randos = redis.srandmember(k, 4L);
+        assertEquals(3, randos.size());
+        randos = redis.srandmember(k, -4L);
+        assertEquals(4, randos.size());
+    }
+     
+    @Test public void sremShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.srem(k, v);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void sremShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        assertEquals(0L, (long)redis.srem(k, v));
+    }
+
+    @Test public void sremShouldReturnZeroIfMemberIsNotInTheSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v", v1 = "v1";
+        redis.sadd(k, v);
+        assertEquals(0L, (long)redis.srem(k, v1));
+    }
+
+    @Test public void sremShouldReturnOneAndRemoveTheMemberFromTheSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.sadd(k, v);
+        assertEquals(1L, (long)redis.srem(k, v));
+        assertEquals(0L, (long)redis.scard(k));
+    }
+
+    @Test public void sremShouldReturnTheCountAndRemoveCountMembersFromTheSet() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v", v1 = "v1", v2 = "v2", v3 = "v3";
+        redis.sadd(k, v, v1, v3);
+        assertEquals(2L, (long)redis.srem(k, v1, v));
+        assertEquals(1L, (long)redis.scard(k));
+        assertEquals(1L, (long)redis.srem(k, v3, v2));
+        assertEquals(0L, (long)redis.scard(k));
+    }
+
+    @Test public void sunionShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k", k1 = "k1", k2 = "k2", k3 = "k3";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.sunion(k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        redis.sadd(k1, v);
+        redis.set(k2, v);
+        redis.sadd(k3, v);
+        try {
+            redis.sunion(k1, k2, k3);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void sunionShouldUnionTwoSets() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k1 = "k1", k2 = "k2";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        redis.sadd(k1, v1, v3, v5);
+        redis.sadd(k2, v1, v2, v4);
+        Set<String> union = redis.sunion(k1, k2);
+        assertEquals(5, union.size());
+        assertEquals(true, union.contains(v1));
+        assertEquals(true, union.contains(v2));
+        assertEquals(true, union.contains(v3));
+        assertEquals(true, union.contains(v4));
+        assertEquals(true, union.contains(v5));
+        redis.sadd(k2, v5);
+        union = redis.sunion(k1, k2);
+        assertEquals(5, union.size());
+        assertEquals(true, union.contains(v1));
+        assertEquals(true, union.contains(v2));
+        assertEquals(true, union.contains(v3));
+        assertEquals(true, union.contains(v4));
+        assertEquals(true, union.contains(v5));
+    }
+
+    @Test public void sunionShouldUnionNSets() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k1 = "k1", k2 = "k2", k3 = "k3";
+        redis.sadd(k1, "a", "b", "c", "d");
+        redis.sadd(k2, "c");
+        redis.sadd(k3, "a", "c", "e");
+        Set<String> union = redis.sunion(k1, k2, k3);
+        assertEquals(5, union.size());
+        assertEquals(true, union.contains("a"));
+        assertEquals(true, union.contains("b"));
+        assertEquals(true, union.contains("c"));
+        assertEquals(true, union.contains("d"));
+        assertEquals(true, union.contains("e"));
+    }
+
+    @Test public void sunionstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k = "k", k1 = "k1", k2 = "k2", k3 = "k3";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.sunionstore(d, k);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        redis.sadd(k1, v);
+        redis.set(k2, v);
+        redis.sadd(k3, v);
+        try {
+            redis.sunionstore(d, k1, k2, k3);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void sunionstoreShouldUnionTwoSetsAndStoreIt() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        redis.sadd(k1, v1, v3, v5);
+        redis.sadd(k2, v1, v2, v4);
+        assertEquals(5L, (long)redis.sunionstore(d, k1, k2));
+        Set<String> union = redis.smembers(d);
+        assertEquals(5, union.size());
+        assertEquals(true, union.contains(v1));
+        assertEquals(true, union.contains(v2));
+        assertEquals(true, union.contains(v3));
+        assertEquals(true, union.contains(v4));
+        assertEquals(true, union.contains(v5));
+        redis.sadd(k2, v5);
+        assertEquals(5L, (long)redis.sunionstore(d, k1, k2));
+        union = redis.smembers(d);
+        assertEquals(5, union.size());
+        assertEquals(true, union.contains(v1));
+        assertEquals(true, union.contains(v2));
+        assertEquals(true, union.contains(v3));
+        assertEquals(true, union.contains(v4));
+        assertEquals(true, union.contains(v5));
+    }
+
+    @Test public void sunionstoreShouldUnionNSetsAndStoreIt() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3";
+        redis.sadd(k1, "a", "b", "c", "d");
+        redis.sadd(k2, "c");
+        redis.sadd(k3, "a", "c", "e");
+        assertEquals(5L, (long)redis.sunionstore(d, k1, k2, k3));
+        Set<String> union = redis.smembers(d);
+        assertEquals(5, union.size());
+        assertEquals(true, union.contains("a"));
+        assertEquals(true, union.contains("b"));
+        assertEquals(true, union.contains("c"));
+        assertEquals(true, union.contains("d"));
+        assertEquals(true, union.contains("e"));
+    }
+
+    @Test public void sscanShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "value";
+        redis.set(k, v);
+        try {
+            redis.sscan(k, 0L);
+        }
+        catch (WrongTypeException wte) {
+            assertEquals(true, true);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void sscanShouldScanThrowASmallSetAndReturnEveryElement() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
+        redis.sadd(k, v1, v2, v3, v4);
+        ScanResult<Set<String>> scan = redis.sscan(k, 0L);
+        assertEquals(4L, (long)scan.cursor);
+        assertEquals(4, scan.results.size());
+        assertEquals(true, scan.results.contains(v1));
+        assertEquals(true, scan.results.contains(v2));
+        assertEquals(true, scan.results.contains(v3));
+        assertEquals(true, scan.results.contains(v4));
+        scan = redis.sscan(k, scan.cursor);
+        assertEquals(4L, (long)scan.cursor);
+        assertEquals(0, scan.results.size());
+    }
+
+    @Test public void sscanShouldScanThroughALargeSetWithCursoring() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        Set<String> set = new HashSet<String>();
+        for (int idx = 0; idx < 62; ++idx) {
+            set.add(String.valueOf(idx));
+        }
+        for (String member : set) {
+            redis.sadd(k, member);
+        }
+        ScanResult<Set<String>> scan = new ScanResult<Set<String>>();
+        Set<String> scanned = new HashSet<String>();
+        while (true) {
+            scan = redis.sscan(k, scan.cursor);
+            if (scan.results.size() == 0) {
+                break;
+            }
+            for (String member : scan.results) {
+                scanned.add(member);
+            }
+        }
+        assertEquals(set.size(), scanned.size());
+        for (String member : scanned) {
+            assertEquals(true, set.contains(member));
+        }
+        scan = redis.sscan(k, scan.cursor);
+        assertEquals(0, scan.results.size());
+    }
+
+    @Test public void sscanShouldScanThroughALargeSetWithCursoringAndACount() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        Set<String> set = new HashSet<String>();
+        for (int idx = 0; idx < 62; ++idx) {
+            set.add(String.valueOf(idx));
+        }
+        for (String member : set) {
+            redis.sadd(k, member);
+        }
+        ScanResult<Set<String>> scan = new ScanResult<Set<String>>();
+        Set<String> scanned = new HashSet<String>();
+        Long count = 5L;
+        while (true) {
+            scan = redis.sscan(k, scan.cursor, "count", String.valueOf(count));
+            if (scan.results.size() == 0) {
+                break;
+            }
+            for (String member : scan.results) {
+                scanned.add(member);
+            }
+        }
+        assertEquals(set.size(), scanned.size());
+        for (String member : scanned) {
+            assertEquals(true, set.contains(member));
+        }
+        scan = redis.sscan(k, scan.cursor, "count", String.valueOf(count));
+        assertEquals(0, scan.results.size());
+    }
+
+    @Test public void sscanShouldScanThroughALargeSetWithCursoringAndAMatch() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        Set<String> set = new HashSet<String>();
+        for (int idx = 0; idx < 62; ++idx) {
+            set.add(String.valueOf(idx));
+        }
+        for (String member : set) {
+            redis.sadd(k, member);
+        }
+        ScanResult<Set<String>> scan = new ScanResult<Set<String>>();
+        Set<String> scanned = new HashSet<String>();
+        String match = "[0-9]"; // All single digit #s
+        while (true) {
+            scan = redis.sscan(k, scan.cursor, "match", match);
+            if (scan.results.size() == 0) {
+                break;
+            }
+            for (String member : scan.results) {
+                scanned.add(member);
+            }
+        }
+        assertEquals(10, scanned.size());
+        for (String member : scanned) {
+            assertEquals(true, set.contains(member));
+        }
+        scan = redis.sscan(k, scan.cursor, "match", match);
+        assertEquals(0, scan.results.size());
+    }
+
+    @Test public void sscanShouldScanThroughALargeSetWithCursoringACountAndAMatch() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        Set<String> set = new HashSet<String>();
+        for (int idx = 0; idx < 62; ++idx) {
+            set.add(String.valueOf(idx));
+        }
+        for (String member : set) {
+            redis.sadd(k, member);
+        }
+        ScanResult<Set<String>> scan = new ScanResult<Set<String>>();
+        Set<String> scanned = new HashSet<String>();
+        String match = "[0-9]"; // All single digit #s
+        Long count = 5L;
+        while (true) {
+            scan = redis.sscan(k, scan.cursor, "count", String.valueOf(count), "match", match);
+            if (scan.results.size() == 0) {
+                break;
+            }
+            for (String member : scan.results) {
+                scanned.add(member);
+            }
+        }
+        assertEquals(10, scanned.size());
+        for (String member : scanned) {
+            assertEquals(true, set.contains(member));
+        }
+        scan = redis.sscan(k, scan.cursor, "match", match, "count", String.valueOf(count));
+        assertEquals(0, scan.results.size());
     }
 
 }
