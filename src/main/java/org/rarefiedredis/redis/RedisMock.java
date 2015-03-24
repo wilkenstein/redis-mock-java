@@ -1030,4 +1030,114 @@ public final class RedisMock extends AbstractRedisMock {
         return new ScanResult<Set<String>>(idx, scanned);
     }
 
+    /* IRedisHash implementations */
+
+    @Override public synchronized Long hdel(String key, String field, String ... fields) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return 0L;
+        }
+        Long count = 0L;
+        if (hashCache.removeValue(key, field)) {
+            count += 1L;
+        }
+        for (String f : fields) {
+            if (hashCache.removeValue(key, f)) {
+                count += 1L;
+            }
+        }
+        return count;
+    }
+
+    @Override public synchronized Boolean hexists(String key, String field) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return false;
+        }
+        return hashCache.get(key).containsKey(field);
+    }
+
+    @Override public synchronized String hget(String key, String field) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return null;
+        }
+        return hashCache.get(key).get(field);
+    }
+
+    @Override public synchronized Map<String, String> hgetall(String key) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return new HashMap<String, String>();
+        }
+        return Collections.unmodifiableMap(hashCache.get(key));
+    }
+
+    @Override public synchronized Long hincrby(String key, String field, long increment) throws WrongTypeException, NotIntegerHashException {
+        checkType(key, "hash");
+        if (!hexists(key, field)) {
+            hset(key, field, String.valueOf(increment));
+        }
+        else {
+            try {
+                Long no = Long.valueOf(hget(key, field));
+                hset(key, field, String.valueOf(no + increment));
+            }
+            catch (NumberFormatException nfe) {
+                throw new NotIntegerHashException();
+            }
+        }
+        return Long.valueOf(hget(key, field));
+    }
+
+    @Override public synchronized String hincrbyfloat(String key, String field, double increment) throws WrongTypeException, NotFloatHashException {
+        checkType(key, "hash");
+        if (!hexists(key, field)) {
+            hset(key, field, String.valueOf(increment));
+        }
+        else {
+            try {
+                Double no = Double.parseDouble(hget(key, field));
+                hset(key, field, String.valueOf(no + increment));
+            }
+            catch (NumberFormatException nfe) {
+                throw new NotFloatHashException();
+            }
+        }
+        return hget(key, field);
+    }
+
+    @Override public synchronized Set<String> hkeys(String key) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return new HashSet<String>();
+        }
+        return hashCache.get(key).keySet();
+    }
+
+    @Override public synchronized String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, ArgException {
+        checkType(key, "hash");
+        if (fieldsvalues.length % 2 != 0) {
+            throw new ArgException("HMSET");
+        }
+        hset(key, field, value);
+        for (int idx = 0; idx < fieldsvalues.length; ++idx) {
+            if (idx % 2 != 0) {
+                continue;
+            }
+            hset(key, fieldsvalues[idx], fieldsvalues[idx + 1]);
+        }
+        return "OK";
+    }
+
+    @Override public synchronized Boolean hset(String key, String field, String value) throws WrongTypeException {
+        checkType(key, "hash");
+        boolean ret = true;
+        if (exists(key) && hashCache.get(key).containsKey(field)) {
+            ret = false;
+        }
+        hashCache.set(key, field, value);
+        return ret;
+    }
+
 }

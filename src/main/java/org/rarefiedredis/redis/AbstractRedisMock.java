@@ -317,7 +317,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
 
     /* IRedisHash commands */
 
-    @Override public Long hdel(String key, String field) throws WrongTypeException, NotImplementedException {
+    @Override public Long hdel(String key, String field, String ... fields) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -333,11 +333,11 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
         throw new NotImplementedException();
     }
 
-    @Override public Long hincrby(String key, String field, long increment) throws WrongTypeException, NotImplementedException {
+    @Override public Long hincrby(String key, String field, long increment) throws WrongTypeException, NotIntegerHashException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String hincrbyfloat(String key, String field, double increment) throws WrongTypeException, NotImplementedException {
+    @Override public String hincrbyfloat(String key, String field, double increment) throws WrongTypeException, NotFloatHashException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -353,7 +353,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
         throw new NotImplementedException();
     }
 
-    @Override public String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, NotImplementedException {
+    @Override public String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, ArgException, NotImplementedException {
         throw new NotImplementedException();
     }
 

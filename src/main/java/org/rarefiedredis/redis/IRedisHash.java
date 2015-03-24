@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface IRedisHash {
 
-    Long hdel(String key, String field) throws WrongTypeException, NotImplementedException;
+    Long hdel(String key, String field, String ... fields) throws WrongTypeException, NotImplementedException;
 
     Boolean hexists(String key, String field) throws WrongTypeException, NotImplementedException;
 
@@ -12,9 +12,9 @@ public interface IRedisHash {
 
     Map<String, String> hgetall(String key) throws WrongTypeException, NotImplementedException;
 
-    Long hincrby(String key, String field, long increment) throws WrongTypeException, NotImplementedException;
+    Long hincrby(String key, String field, long increment) throws WrongTypeException, NotIntegerHashException, NotImplementedException;
 
-    String hincrbyfloat(String key, String field, double increment) throws WrongTypeException, NotImplementedException;
+    String hincrbyfloat(String key, String field, double increment) throws WrongTypeException, NotFloatHashException, NotImplementedException;
 
     Set<String> hkeys(String key) throws WrongTypeException, NotImplementedException;
 
@@ -22,7 +22,7 @@ public interface IRedisHash {
 
     List<String> hmget(String key, String field, String ... fields) throws WrongTypeException, NotImplementedException;
 
-    String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, NotImplementedException;
+    String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, ArgException, NotImplementedException;
 
     Boolean hset(String key, String field, String value) throws WrongTypeException, NotImplementedException;
 
