@@ -60,7 +60,7 @@ $ mvn test
 
 * 0.0.3
   - All set commands implemented.
-  - All set commands unit-tested.                     
+  - All set commands unit-tested.
 * 0.0.2
   - All list commands implemented.
   - All list commands unit-tested. 
