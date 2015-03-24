@@ -25,8 +25,8 @@ under the License.
     <language>en-us</language>
     <copyright>&#169;2015</copyright>
     <item>
-      <title>File: 27,
-             Errors: 909,
+      <title>File: 29,
+             Errors: 1040,
              Warnings: 0,
              Infos: 0
       </title>
@@ -55,7 +55,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  246
+                  307
                 </td>
               </tr>
                           <tr>
@@ -284,6 +284,20 @@ under the License.
               </tr>
                           <tr>
                 <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotFloatHashException.java">org/rarefiedredis/redis/NotFloatHashException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisString.java">org/rarefiedredis/redis/IRedisString.java</a>
                 </td>
                 <td>
@@ -327,6 +341,20 @@ under the License.
                           <tr>
                 <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotIntegerException.java">org/rarefiedredis/redis/NotIntegerException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotIntegerHashException.java">org/rarefiedredis/redis/NotIntegerHashException.java</a>
                 </td>
                 <td>
                   0
@@ -419,7 +447,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  303
+                  367
                 </td>
               </tr>
                       </tbody>

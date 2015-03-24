@@ -32,6 +32,6 @@ public interface IRedisHash {
 
     List<String> hvals(String key) throws WrongTypeException, NotImplementedException;
 
-    ScanResult<Map<String, String>> hscan(String key, long cursor) throws WrongTypeException, NotImplementedException;
+    ScanResult<Map<String, String>> hscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException;
 
 }

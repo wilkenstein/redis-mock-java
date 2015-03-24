@@ -58,6 +58,9 @@ $ mvn test
 
 ## Versions
 
+* 0.0.4
+  - All hash commands implemented.
+  - All hash commands unit-tested.
 * 0.0.3
   - All set commands implemented.
   - All set commands unit-tested.

@@ -373,7 +373,7 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
         throw new NotImplementedException();
     }
 
-    @Override public ScanResult<Map<String, String>> hscan(String key, long cursor) throws WrongTypeException, NotImplementedException {
+    @Override public ScanResult<Map<String, String>> hscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

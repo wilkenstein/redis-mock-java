@@ -1115,6 +1115,27 @@ public final class RedisMock extends AbstractRedisMock {
         return hashCache.get(key).keySet();
     }
 
+    @Override public synchronized Long hlen(String key) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return 0L;
+        }
+        return (long)hashCache.get(key).size();
+    }
+
+    @Override public synchronized List<String> hmget(String key, String field, String ... fields) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return new ArrayList<String>();
+        }
+        List<String> lst = new ArrayList<String>(1 + fields.length);
+        lst.add(hget(key, field));
+        for (String f : fields) {
+            lst.add(hget(key, f));
+        }
+        return lst;
+    }
+
     @Override public synchronized String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, ArgException {
         checkType(key, "hash");
         if (fieldsvalues.length % 2 != 0) {
@@ -1138,6 +1159,64 @@ public final class RedisMock extends AbstractRedisMock {
         }
         hashCache.set(key, field, value);
         return ret;
+    }
+
+    @Override public synchronized Boolean hsetnx(String key, String field, String value) throws WrongTypeException {
+        checkType(key, "hash");
+        boolean ret = false;
+        if (!exists(key) || !hashCache.get(key).containsKey(field)) {
+            ret = true;
+            hset(key, field, value);
+        }
+        return ret;
+    }
+
+    @Override public synchronized Long hstrlen(String key, String field) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key) || !hashCache.get(key).containsKey(field)) {
+            return 0L;
+        }
+        return (long)hashCache.get(key).get(field).length();
+    }
+
+    @Override public synchronized List<String> hvals(String key) throws WrongTypeException {
+        checkType(key, "hash");
+        if (!exists(key)) {
+            return new ArrayList<String>();
+        }
+        return Collections.unmodifiableList(new ArrayList<String>(hashCache.get(key).values()));
+    }
+
+    @Override public synchronized ScanResult<Map<String, String>> hscan(String key, long cursor, String ... options) throws WrongTypeException {
+        checkType(key, "hash");
+        Long count = null;
+        Pattern match = null;
+        for (int idx = 0; idx < options.length; ++idx) {
+            if (options[idx].equals("count")) {
+                count = Long.valueOf(options[idx + 1]);
+            }
+            else if (options[idx].equals("match")) {
+                match = Pattern.compile(GlobToRegEx.convertGlobToRegEx(options[idx + 1]));
+            }
+        }
+        if (count == null) {
+            count = 10L;
+        }
+        Map<String, String> scanned = new HashMap<String, String>();
+        Map<String, String> all = hgetall(key);
+        Long idx = 0L;
+        for (String k : all.keySet()) {
+            idx += 1;
+            if (idx > cursor) {
+                if (match == null || match.matcher(k).matches()) {
+                    scanned.put(k, all.get(k));
+                }
+                if ((long)scanned.size() >= count) {
+                    break;
+                }
+            }
+        }
+        return new ScanResult<Map<String, String>>(idx, scanned);
     }
 
 }
