@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.Date;
 
-public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, IRedisSet {
+public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, IRedisSet, IRedisHash {
 
     public AbstractRedisMock() {
     }
@@ -312,6 +312,68 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
     }
 
     @Override public ScanResult<Set<String>> sscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    /* IRedisHash commands */
+
+    @Override public Long hdel(String key, String field) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Boolean hexists(String key, String field) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String hget(String key, String field) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Map<String, String> hgetall(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long hincrby(String key, String field, long increment) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String hincrbyfloat(String key, String field, double increment) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<String> hkeys(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long hlen(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public List<String> hmget(String key, String field, String ... fields) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String hmset(String key, String field, String value, String ... fieldsvalues) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Boolean hset(String key, String field, String value) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Boolean hsetnx(String key, String field, String value) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long hstrlen(String key, String field) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public List<String> hvals(String key) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public ScanResult<Map<String, String>> hscan(String key, long cursor) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
