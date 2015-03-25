@@ -2,6 +2,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Date;
@@ -16,6 +17,16 @@ import java.util.regex.Pattern;
  */
 public final class RedisMock extends AbstractRedisMock {
 
+    private final class WatchKey {
+        public Boolean modified;
+        public List<Integer> watchers;
+
+        public WatchKey() {
+            this.modified = false;
+            this.watchers = new ArrayList<Integer>();
+        }
+    }
+
     /** Cache to hold strings. */
     private RedisStringCache stringCache;
     /** Cache to hold lists. */
@@ -29,7 +40,7 @@ public final class RedisMock extends AbstractRedisMock {
     /** Expiration timers. */
     private Map<String, Timer> timers;
     /** Watchers. */
-    private Map<String, Boolean> watchers;
+    private Map<String, WatchKey> watchers;
 
     /**
      * Default constructor. Initializes an empty redis
@@ -46,12 +57,40 @@ public final class RedisMock extends AbstractRedisMock {
         caches.add(setCache);
         caches.add(hashCache);
         timers = new HashMap<String, Timer>();
-        watchers = new HashMap<String, Boolean>();
+        watchers = new HashMap<String, WatchKey>();
+    }
+
+    /**
+     * Always throws a CloneNotSupportedException. Cloning RedisMock
+     * instances is not supported.
+     *
+     * @throws CloneNotSupportedException Always
+     *
+     * @return Nothing, since this function always throws an exception.
+     */
+    @Override public final Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
+    /**
+     * Create a client of this instance. This client connects to this instance
+     * and passes commands to & from this instance.
+     *
+     * @return A client of this RedisMock instance.
+     */
+    @Override public IRedis createClient() {
+        return new RedisMockClient(this);
     }
 
     private void checkType(String key, String type) throws WrongTypeException {
         if (exists(key) && !type(key).equals(type)) {
             throw new WrongTypeException();
+        }
+    }
+
+    private void keyModified(String key) {
+        if (watchers.containsKey(key)) {
+            watchers.get(key).modified = true;
         }
     }
 
@@ -65,6 +104,7 @@ public final class RedisMock extends AbstractRedisMock {
             for (IRedisCache cache : caches) {
                 if (cache.exists(key)) {
                     cache.remove(key);
+                    keyModified(key);
                     deleted += 1L;
                     break;
                 }
@@ -503,6 +543,7 @@ public final class RedisMock extends AbstractRedisMock {
             }
         }
         stringCache.set(key, value);
+        keyModified(key);
         if (ex != -1) {
             expire(key, ex);
         }
@@ -637,9 +678,11 @@ public final class RedisMock extends AbstractRedisMock {
         if (index != -1) {
             if (before_after.equals("before")) {
                 listCache.set(key, value, index);
+                keyModified(key);
             }
             else if (before_after.equals("after")) {
                 listCache.set(key, value, index + 1);
+                keyModified(key);
             }
             return (long)llen(key);
         }
@@ -674,6 +717,7 @@ public final class RedisMock extends AbstractRedisMock {
             if (listCache.get(key).isEmpty()) {
                 del(key);
             }
+            keyModified(key);
             return popped;
         }
         catch (IndexOutOfBoundsException e) {
@@ -687,6 +731,7 @@ public final class RedisMock extends AbstractRedisMock {
         for (String elem : elements) {
             listCache.set(key, elem, 0);
         }
+        keyModified(key);
         return llen(key);
     }
 
@@ -741,6 +786,9 @@ public final class RedisMock extends AbstractRedisMock {
         if (listCache.get(key).size() == 0) {
             del(key);
         }
+        if (cnt > 0L) {
+            keyModified(key);
+        }
         return cnt;
     }
 
@@ -753,6 +801,7 @@ public final class RedisMock extends AbstractRedisMock {
             throw new IndexOutOfRangeException();
         }
         listCache.get(key).set((int)index, element);
+        keyModified(key);
         return "OK";
     }
 
@@ -780,6 +829,7 @@ public final class RedisMock extends AbstractRedisMock {
         }
         List<String> trimmed = listCache.get(key).subList((int)start, (int)(end + 1L));
         listCache.get(key).retainAll(trimmed);
+        keyModified(key);
         return "OK";
     }
 
@@ -793,6 +843,7 @@ public final class RedisMock extends AbstractRedisMock {
             if (listCache.get(key).isEmpty()) {
                 del(key);
             }
+            keyModified(key);
             return popped;
         }
         catch (IndexOutOfBoundsException ie) {
@@ -817,6 +868,7 @@ public final class RedisMock extends AbstractRedisMock {
         for (String elem : elements) {
             listCache.set(key, elem);
         }
+        keyModified(key);
         return llen(key);
     }
 
@@ -842,6 +894,9 @@ public final class RedisMock extends AbstractRedisMock {
                 setCache.set(key, memb);
                 count += 1L;
             }
+        }
+        if (count > 0L) {
+            keyModified(key);
         }
         return count;
     }
@@ -874,6 +929,7 @@ public final class RedisMock extends AbstractRedisMock {
         for (String d : diff) {
             sadd(destination, d);
         }
+        keyModified(destination);
         return (long)diff.size();
     }
 
@@ -897,6 +953,7 @@ public final class RedisMock extends AbstractRedisMock {
         for (String i : inter) {
             sadd(destination, i);
         }
+        keyModified(destination);
         return (long)inter.size();
     }
 
@@ -924,6 +981,8 @@ public final class RedisMock extends AbstractRedisMock {
             return false;
         }
         sadd(dest, member);
+        keyModified(source);
+        keyModified(dest);
         return (rem == 1L ? true : false);
     }
 
@@ -977,6 +1036,9 @@ public final class RedisMock extends AbstractRedisMock {
                 count += 1L;
             }
         }
+        if (count > 0L) {
+            keyModified(key);
+        }
         return count;
     }
 
@@ -1000,6 +1062,7 @@ public final class RedisMock extends AbstractRedisMock {
         for (String u : union) {
             sadd(destination, u);
         }
+        keyModified(destination);
         return (long)union.size();
     }
 
@@ -1051,6 +1114,9 @@ public final class RedisMock extends AbstractRedisMock {
                 count += 1L;
             }
         }
+        if (count > 0L) {
+            keyModified(key);
+        }
         return count;
     }
 
@@ -1092,6 +1158,7 @@ public final class RedisMock extends AbstractRedisMock {
                 throw new NotIntegerHashException();
             }
         }
+        keyModified(key);
         return Long.valueOf(hget(key, field));
     }
 
@@ -1109,6 +1176,7 @@ public final class RedisMock extends AbstractRedisMock {
                 throw new NotFloatHashException();
             }
         }
+        keyModified(key);
         return hget(key, field);
     }
 
@@ -1163,6 +1231,7 @@ public final class RedisMock extends AbstractRedisMock {
             ret = false;
         }
         hashCache.set(key, field, value);
+        keyModified(key);
         return ret;
     }
 
@@ -1226,29 +1295,97 @@ public final class RedisMock extends AbstractRedisMock {
 
     /* IRedisTransaction commands */
 
+    @Override public String discard() throws DiscardWithoutMultiException {
+        throw new DiscardWithoutMultiException();
+    }
+
+    @Override public List<Object> exec() throws ExecWithoutMultiException {
+        throw new ExecWithoutMultiException();
+    }
+
     @Override public IRedis multi() {
         return new RedisMockMulti(this);
     }
 
-    @Override public String unwatch() {
-        watchers.clear();
-        return "OK";
+    @Override public synchronized String unwatch() {
+        return unwatch(this.hashCode());
     }
 
-    @Override public String watch(String key) {
-        watchers.put(key, false);
-        return "OK";
-    }
-
-    public boolean modified(String command, List<Object> args) {
-        if (command.equals("set")) {
-            return watchers.containsKey(args.get(0)) && watchers.get(args.get(0));
+    public synchronized String unwatch(Integer hashCode) {
+        List<String> keysToRemove = new LinkedList<String>();
+        for (String key : watchers.keySet()) {
+            watchers.get(key).watchers.remove(hashCode);
+            if (watchers.get(key).watchers.size() == 0) {
+                keysToRemove.add(key);
+            }
         }
-        return false;
+        for (String key : keysToRemove) {
+            watchers.remove(key);
+        }
+        return "OK";
     }
 
-    public void execd() {
-        watchers.clear();
+    @Override public synchronized String watch(String key) {
+        return watch(key, this.hashCode());
+    }
+
+    public synchronized String watch(String key, Integer hashCode) {
+        if (!watchers.containsKey(key)) {
+            watchers.put(key, new WatchKey());
+        }
+        watchers.get(key).watchers.add(hashCode);
+        return "OK";
+    }
+
+    @Override public synchronized boolean modified(Integer hashCode, String command, List<Object> args) {
+        List<String> keys = new LinkedList<String>();
+        if (args.get(0) instanceof String[]) {
+            if (command.equals("mset") || command.equals("msetnx")) {
+                String[] keysvalues = (String[])args.get(0);
+                for (int idx = 0; idx < keysvalues.length; ++idx) {
+                    if (idx % 2 == 0) {
+                        keys.add(keysvalues[idx]);
+                    }
+                }
+            }
+            else {
+                for (String key : (String[])args.get(0)) {
+                    keys.add((String)key);
+                }
+            }
+        }
+        else {
+            if (command.equals("bitop")) {
+                keys.add((String)args.get(1));
+            }
+            else {
+                keys.add((String)args.get(0));
+            }
+        }
+        if (command.equals("rpoplpush")) {
+            keys.add((String)args.get(1));
+        }
+        if (command.equals("sdiff") || command.equals("sinter") || command.equals("sunion")) {
+            for (String k : (String[])args.get(1)) {
+                keys.add(k);
+            }
+        }
+        if (command.equals("sdiffstore") || command.equals("sinterstore") || command.equals("sunionstore")) {
+            keys.add((String)args.get(1));
+            for (String k : (String[])args.get(2)) {
+                keys.add(k);
+            }
+        }
+        if (command.equals("smove")) {
+            keys.add((String)args.get(1));
+        }
+        for (String key : keys) {
+            if (watchers.containsKey(key) && watchers.get(key).modified && watchers.get(key).watchers.contains(hashCode)) {
+                return true;
+            }
+        }
+        // TODO: Multi-key commands.
+        return false;
     }
 
 }

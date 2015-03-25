@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.Date;
 
-public class AbstractRedisMock implements IRedis {
+public abstract class AbstractRedisMock implements IRedis {
 
     public AbstractRedisMock() {
     }
@@ -379,11 +379,11 @@ public class AbstractRedisMock implements IRedis {
 
     /* IRedisTransaction commands */
 
-    @Override public String discard() throws NotImplementedException {
+    @Override public String discard() throws DiscardWithoutMultiException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public List<Object> exec() throws NotImplementedException {
+    @Override public List<Object> exec() throws ExecWithoutMultiException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -481,5 +481,10 @@ public class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
+    /** IRedis special overrides */
+
+    @Override public abstract IRedis createClient();
+
+    @Override public abstract boolean modified(Integer hashCode, String command, List<Object> args);
 
 }

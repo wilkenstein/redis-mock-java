@@ -17,11 +17,12 @@ public final class RedisMockMulti extends AbstractRedisMock {
         }
     }
 
-    private RedisMock redisMock;
+    private IRedis redisMock;
     private List<MultiCommand> commands;
 
-    public RedisMockMulti(RedisMock redisMock) {
+    public RedisMockMulti(IRedis redisMock) {
         this.redisMock = redisMock;
+        commands = new ArrayList<MultiCommand>();
     }
 
     private synchronized Object command(String name, Object ... args) {
@@ -38,45 +39,65 @@ public final class RedisMockMulti extends AbstractRedisMock {
         Method[] methods = redisMock.getClass().getDeclaredMethods();
         synchronized (redisMock) {
             for (MultiCommand command : commands) {
-                if (redisMock.modified(command.command, command.args)) {
+                if (modified(redisMock.hashCode(), command.command, command.args)) {
+                    try {
+                        redisMock.unwatch();
+                    }
+                    catch (NotImplementedException nie) {
+                    }
                     return null;
                 }
             }
             for (MultiCommand command : commands) {
                 for (Method method : methods) {
                     if (method.getName().equals(command.command)) {
-                        if (method.getParameterTypes().length <= command.args.size()) {
+                        if (method.getParameterTypes().length == command.args.size()) {
                             try {
                                 Object ret = method.invoke(redisMock, command.args.toArray());
                                 returns.add(ret);
                             }
                             catch (Exception e) {
+                                if (command.command.equals("del")) {
+                                    e.printStackTrace();
+                                }
                                 returns.add(e);
                             }
                         }
                     }
                 }
             }
-            redisMock.execd();
+            try {
+                redisMock.unwatch();
+            }
+            catch (Exception e) {
+            }
         }
         return returns;
     }
 
-    @Override public synchronized String discard() {
+    @Override public synchronized String discard() throws NotImplementedException {
         commands.clear();
-        return "OK";
-    }
-
-    @Override public synchronized String unwatch() {
         return redisMock.unwatch();
     }
 
-    @Override public synchronized String watch(String key) {
+    @Override public String unwatch() throws NotImplementedException {
+        return redisMock.unwatch();
+    }
+
+    @Override public String watch(String key) throws NotImplementedException {
         return redisMock.watch(key);
     }
 
+    @Override public IRedis createClient() {
+        return redisMock.createClient();
+    }
+
+    @Override public boolean modified(Integer hashCode, String command, List<Object> args) {
+        return redisMock.modified(hashCode, command, args);
+    }
+
     @Override public  Long del(final String ... keys) {
-        return (Long)command("del", keys);
+        return (Long)command("del", new Object[] { keys });
     }
 
     @Override public  Boolean exists(final String key) {
@@ -164,11 +185,11 @@ public final class RedisMockMulti extends AbstractRedisMock {
     }
 
     @Override public  String mset(final String ... keyvalues) {
-        return (String)command("mset", keyvalues);
+        return (String)command("mset", new Object[] { keyvalues });
     }
 
     @Override public  Boolean msetnx(final String ... keyvalues) {
-        return (Boolean)command("msetnx", keyvalues);
+        return (Boolean)command("msetnx", new Object[] { keyvalues });
     }
 
     @Override public  String psetex(String key, long milliseconds, String value) {
