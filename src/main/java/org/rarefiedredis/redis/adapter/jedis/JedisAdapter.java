@@ -2,8 +2,14 @@ package org.rarefiedredis.redis.adapter.jedis;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisException;
+
 import org.rarefiedredis.redis.RedisMock;
 import org.rarefiedredis.redis.IRedis;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public class JedisAdapter extends Jedis {
 
@@ -28,13 +34,18 @@ public class JedisAdapter extends Jedis {
         }
     }
 
-    /*
+
     @Override public String set(final String key, final String value, final String nxxx, final String expx,
                                 final long time) {
+        try {
+            return redis.set(key, value, nxxx, expx, String.valueOf(time));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-
-    public String get(final String key) {
+    @Override public String get(final String key) {
         try {
             return redis.get(key);
         }
@@ -43,29 +54,42 @@ public class JedisAdapter extends Jedis {
         }
     }
 
-    public Boolean exists(final String key) {
-        checkIsInMulti();
-        client.exists(key);
-        return client.getIntegerReply() == 1;
+    @Override public Boolean exists(final String key) {
+        try {
+            return redis.exists(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long del(final String... keys) {
-        checkIsInMulti();
-        client.del(keys);
-        return client.getIntegerReply();
+    @Override public Long del(final String... keys) {
+        try {
+            return redis.del(keys);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long del(String key) {
-        client.del(key);
-        return client.getIntegerReply();
+    @Override public Long del(String key) {
+        try {
+            return redis.del(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public String type(final String key) {
-        checkIsInMulti();
-        client.type(key);
-        return client.getStatusCodeReply();
+    @Override public String type(final String key) {
+        try {
+            return redis.type(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
-
+    /*
     public Set<String> keys(final String pattern) {
         checkIsInMulti();
         client.keys(pattern);
@@ -89,346 +113,565 @@ public class JedisAdapter extends Jedis {
         client.renamenx(oldkey, newkey);
         return client.getIntegerReply();
     }
-
-    public Long expire(final String key, final int seconds) {
-        checkIsInMulti();
-        client.expire(key, seconds);
-        return client.getIntegerReply();
+    */
+    @Override public Long expire(final String key, final int seconds) {
+        try {
+            return redis.expire(key, seconds) ? 1L : 0L;
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long expireAt(final String key, final long unixTime) {
-        checkIsInMulti();
-        client.expireAt(key, unixTime);
-        return client.getIntegerReply();
+    @Override public Long expireAt(final String key, final long unixTime) {
+        try {
+            return redis.expireat(key, unixTime) ? 1L : 0L;
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
-
+    /*
     public Long ttl(final String key) {
         checkIsInMulti();
         client.ttl(key);
         return client.getIntegerReply();
     }
-
+    
     public Long move(final String key, final int dbIndex) {
         checkIsInMulti();
         client.move(key, dbIndex);
         return client.getIntegerReply();
     }
-
-    public String getSet(final String key, final String value) {
-        checkIsInMulti();
-        client.getSet(key, value);
-        return client.getBulkReply();
-    }
-
-    public List<String> mget(final String... keys) {
-        checkIsInMulti();
-        client.mget(keys);
-        return client.getMultiBulkReply();
-    }
-
-    public Long setnx(final String key, final String value) {
-        checkIsInMulti();
-        client.setnx(key, value);
-        return client.getIntegerReply();
-    }
-
-    public String setex(final String key, final int seconds, final String value) {
-        checkIsInMulti();
-        client.setex(key, seconds, value);
-        return client.getStatusCodeReply();
-    }
-
-    public String mset(final String... keysvalues) {
-        checkIsInMulti();
-        client.mset(keysvalues);
-        return client.getStatusCodeReply();
-    }
-
-    public Long msetnx(final String... keysvalues) {
-        checkIsInMulti();
-        client.msetnx(keysvalues);
-        return client.getIntegerReply();
-    }
-
-    public Long decrBy(final String key, final long integer) {
-        checkIsInMulti();
-        client.decrBy(key, integer);
-        return client.getIntegerReply();
-    }
-
-    public Long decr(final String key) {
-        checkIsInMulti();
-        client.decr(key);
-        return client.getIntegerReply();
-    }
-
-    public Long incrBy(final String key, final long integer) {
-        checkIsInMulti();
-        client.incrBy(key, integer);
-        return client.getIntegerReply();
-    }
-
-    public Double incrByFloat(final String key, final double value) {
-        checkIsInMulti();
-        client.incrByFloat(key, value);
-        String dval = client.getBulkReply();
-        return (dval != null ? new Double(dval) : null);
-    }
-
-    public Long incr(final String key) {
-        checkIsInMulti();
-        client.incr(key);
-        return client.getIntegerReply();
-    }
-
-    public Long append(final String key, final String value) {
-        checkIsInMulti();
-        client.append(key, value);
-        return client.getIntegerReply();
-    }
-
-    public String substr(final String key, final int start, final int end) {
-        checkIsInMulti();
-        client.substr(key, start, end);
-        return client.getBulkReply();
-    }
-
-    public Long hset(final String key, final String field, final String value) {
-        checkIsInMulti();
-        client.hset(key, field, value);
-        return client.getIntegerReply();
-    }
-
-    public String hget(final String key, final String field) {
-        checkIsInMulti();
-        client.hget(key, field);
-        return client.getBulkReply();
-    }
-
-    public Long hsetnx(final String key, final String field, final String value) {
-        checkIsInMulti();
-        client.hsetnx(key, field, value);
-        return client.getIntegerReply();
-    }
-
-    public String hmset(final String key, final Map<String, String> hash) {
-        checkIsInMulti();
-        client.hmset(key, hash);
-        return client.getStatusCodeReply();
-    }
-
-    public List<String> hmget(final String key, final String... fields) {
-        checkIsInMulti();
-        client.hmget(key, fields);
-        return client.getMultiBulkReply();
-    }
-
-    public Long hincrBy(final String key, final String field, final long value) {
-        checkIsInMulti();
-        client.hincrBy(key, field, value);
-        return client.getIntegerReply();
-    }
-
-    public Double hincrByFloat(final String key, final String field, final double value) {
-        checkIsInMulti();
-        client.hincrByFloat(key, field, value);
-        final String dval = client.getBulkReply();
-        return (dval != null ? new Double(dval) : null);
-    }
-
-    public Boolean hexists(final String key, final String field) {
-        checkIsInMulti();
-        client.hexists(key, field);
-        return client.getIntegerReply() == 1;
-    }
-
-    public Long hdel(final String key, final String... fields) {
-        checkIsInMulti();
-        client.hdel(key, fields);
-        return client.getIntegerReply();
-    }
-
-    public Long hlen(final String key) {
-        checkIsInMulti();
-        client.hlen(key);
-        return client.getIntegerReply();
-    }
-
-    public Set<String> hkeys(final String key) {
-        checkIsInMulti();
-        client.hkeys(key);
-        return BuilderFactory.STRING_SET.build(client.getBinaryMultiBulkReply());
-    }
-
-    public List<String> hvals(final String key) {
-        checkIsInMulti();
-        client.hvals(key);
-        final List<String> lresult = client.getMultiBulkReply();
-        return lresult;
-    }
-
-    public Map<String, String> hgetAll(final String key) {
-        checkIsInMulti();
-        client.hgetAll(key);
-        return BuilderFactory.STRING_MAP.build(client.getBinaryMultiBulkReply());
-    }
-
-    public Long rpush(final String key, final String... strings) {
-        checkIsInMulti();
-        client.rpush(key, strings);
-        return client.getIntegerReply();
-    }
-
-    public Long lpush(final String key, final String... strings) {
-        checkIsInMulti();
-        client.lpush(key, strings);
-        return client.getIntegerReply();
-    }
-
-    public Long llen(final String key) {
-        checkIsInMulti();
-        client.llen(key);
-        return client.getIntegerReply();
-    }
-
-    public List<String> lrange(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.lrange(key, start, end);
-        return client.getMultiBulkReply();
-    }
-
-    public String ltrim(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.ltrim(key, start, end);
-        return client.getStatusCodeReply();
-    }
-
-    public String lindex(final String key, final long index) {
-        checkIsInMulti();
-        client.lindex(key, index);
-        return client.getBulkReply();
-    }
-
-    public String lset(final String key, final long index, final String value) {
-        checkIsInMulti();
-        client.lset(key, index, value);
-        return client.getStatusCodeReply();
-    }
-
-    public Long lrem(final String key, final long count, final String value) {
-        checkIsInMulti();
-        client.lrem(key, count, value);
-        return client.getIntegerReply();
-    }
-
-    public String lpop(final String key) {
-        checkIsInMulti();
-        client.lpop(key);
-        return client.getBulkReply();
-    }
-
-    public String rpop(final String key) {
-        checkIsInMulti();
-        client.rpop(key);
-        return client.getBulkReply();
-    }
-
-    public String rpoplpush(final String srckey, final String dstkey) {
-        checkIsInMulti();
-        client.rpoplpush(srckey, dstkey);
-        return client.getBulkReply();
-    }
-
-    public Long sadd(final String key, final String... members) {
-        checkIsInMulti();
-        client.sadd(key, members);
-        return client.getIntegerReply();
-    }
-
-    public Set<String> smembers(final String key) {
-        checkIsInMulti();
-        client.smembers(key);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+    */
+    @Override public String getSet(final String key, final String value) {
+        try {
+            return redis.getset(key, value);
         }
-        return new HashSet<String>(members);
-    }
-
-    public Long srem(final String key, final String... members) {
-        checkIsInMulti();
-        client.srem(key, members);
-        return client.getIntegerReply();
-    }
-
-    public String spop(final String key) {
-        checkIsInMulti();
-        client.spop(key);
-        return client.getBulkReply();
-    }
-
-    public Long smove(final String srckey, final String dstkey, final String member) {
-        checkIsInMulti();
-        client.smove(srckey, dstkey, member);
-        return client.getIntegerReply();
-    }
-
-    public Long scard(final String key) {
-        checkIsInMulti();
-        client.scard(key);
-        return client.getIntegerReply();
-    }
-
-    public Boolean sismember(final String key, final String member) {
-        checkIsInMulti();
-        client.sismember(key, member);
-        return client.getIntegerReply() == 1;
-    }
-
-    public Set<String> sinter(final String... keys) {
-        checkIsInMulti();
-        client.sinter(keys);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+        catch (Exception e) {
+            throw new JedisException(e);
         }
-        return new HashSet<String>(members);
     }
 
-    public Long sinterstore(final String dstkey, final String... keys) {
-        checkIsInMulti();
-        client.sinterstore(dstkey, keys);
-        return client.getIntegerReply();
-    }
-
-    public Set<String> sunion(final String... keys) {
-        checkIsInMulti();
-        client.sunion(keys);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+    @Override public List<String> mget(final String ... keys) {
+        try {
+            String[] mget = redis.mget(keys);
+            List<String> lst = new ArrayList<String>(mget.length);
+            for (String get : mget) {
+                lst.add(get);
+            }
+            return lst;
         }
-        return new HashSet<String>(members);
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long sunionstore(final String dstkey, final String... keys) {
-        checkIsInMulti();
-        client.sunionstore(dstkey, keys);
-        return client.getIntegerReply();
+    @Override public Long setnx(final String key, final String value) {
+        try {
+            return redis.setnx(key, value);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<String> sdiff(final String... keys) {
-        checkIsInMulti();
-        client.sdiff(keys);
-        return BuilderFactory.STRING_SET.build(client.getBinaryMultiBulkReply());
+    @Override public String setex(final String key, final int seconds, final String value) {
+        try {
+            return redis.setex(key, seconds, value);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long sdiffstore(final String dstkey, final String... keys) {
-        checkIsInMulti();
-        client.sdiffstore(dstkey, keys);
-        return client.getIntegerReply();
+    @Override public String mset(final String... keysvalues) {
+        try {
+            return redis.mset(keysvalues);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
+    @Override public Long msetnx(final String... keysvalues) {
+        try {
+            return redis.msetnx(keysvalues) ? 1L : 0L;
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long decrBy(final String key, final long integer) {
+        try {
+            return redis.decrby(key, integer);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long decr(final String key) {
+        try {
+            return redis.decr(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long incrBy(final String key, final long integer) {
+        try {
+            return redis.incrby(key, integer);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Double incrByFloat(final String key, final double value) {
+        try {
+            return Double.parseDouble(redis.incrbyfloat(key, value));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long incr(final String key) {
+        try {
+            return redis.incr(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long append(final String key, final String value) {
+        try {
+            return redis.append(key, value);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String substr(final String key, final int start, final int end) {
+        try {
+            return redis.getrange(key, start, end);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long hset(final String key, final String field, final String value) {
+        try {
+            return redis.hset(key, field, value) ? 1L : 0L;
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String hget(final String key, final String field) {
+        try {
+            return redis.hget(key, field);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long hsetnx(final String key, final String field, final String value) {
+        try {
+            return redis.hsetnx(key, field, value) ? 1L : 0L;
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String hmset(final String key, final Map<String, String> hash) {
+        try {
+            String field = null, value = null;
+            String[] args = new String[(hash.size() - 1)*2];
+            int idx = 0;
+            for (String f : hash.keySet()) {
+                if (field == null) {
+                    field = f;
+                    value = hash.get(f);
+                    continue;
+                }
+                args[idx] = f;
+                args[idx + 1] = hash.get(f);
+                idx += 2;
+            }
+            return redis.hmset(key, field, value, args);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public List<String> hmget(final String key, final String... fields) {
+        try {
+            String field = fields[0];
+            String[] f = new String[fields.length - 1];
+            for (int idx = 1; idx < fields.length; ++idx) {
+                f[idx - 1] = fields[idx];
+            }
+            return redis.hmget(key, field, f);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long hincrBy(final String key, final String field, final long value) {
+        try {
+            return redis.hincrby(key, field, value);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Double hincrByFloat(final String key, final String field, final double value) {
+        try {
+            return Double.parseDouble(redis.hincrbyfloat(key, field, value));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Boolean hexists(final String key, final String field) {
+        try {
+            return redis.hexists(key, field);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long hdel(final String key, final String... fields) {
+        try {
+            String field = fields[0];
+            String[] f = new String[fields.length - 1];
+            for (int idx = 1; idx < fields.length; ++idx) {
+                f[idx - 1] = fields[idx];
+            }
+            return redis.hdel(key, field, f);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long hlen(final String key) {
+        try {
+            return redis.hlen(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> hkeys(final String key) {
+        try {
+            return redis.hkeys(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public List<String> hvals(final String key) {
+        try {
+            return redis.hvals(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Map<String, String> hgetAll(final String key) {
+        try {
+            return redis.hgetall(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long rpush(final String key, final String... strings) {
+        try {
+            String element = strings[0];
+            String[] elements = new String[strings.length - 1];
+            for (int idx = 1; idx < strings.length; ++idx) {
+                elements[idx - 1] = strings[idx];
+            }
+            return redis.rpush(key, element, elements);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long lpush(final String key, final String... strings) {
+        try {
+            String element = strings[0];
+            String[] elements = new String[strings.length - 1];
+            for (int idx = 1; idx < strings.length; ++idx) {
+                elements[idx - 1] = strings[idx];
+            }
+            return redis.lpush(key, element, elements);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long llen(final String key) {
+        try {
+            return redis.llen(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public List<String> lrange(final String key, final long start, final long end) {
+        try {
+            return redis.lrange(key, start, end);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String ltrim(final String key, final long start, final long end) {
+        try {
+            return redis.ltrim(key, start, end);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String lindex(final String key, final long index) {
+        try {
+            return redis.lindex(key, index);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String lset(final String key, final long index, final String value) {
+        try {
+            return redis.lset(key, index, value);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long lrem(final String key, final long count, final String value) {
+        try {
+            return redis.lrem(key, count, value);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String lpop(final String key) {
+        try {
+            return redis.lpop(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String rpop(final String key) {
+        try {
+            return redis.rpop(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String rpoplpush(final String srckey, final String dstkey) {
+        try {
+            return redis.rpoplpush(srckey, dstkey);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long sadd(final String key, final String... members) {
+        try {
+            String member = members[0];
+            String[] m = new String[members.length - 1];
+            for (int idx = 1; idx < members.length; ++idx) {
+                m[idx - 1] = members[idx];
+            }
+            return redis.sadd(key, member, m);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> smembers(final String key) {
+        try {
+            return redis.smembers(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long srem(final String key, final String... members) {
+        try {
+            String member = members[0];
+            String[] m = new String[members.length - 1];
+            for (int idx = 1; idx < members.length; ++idx) {
+                m[idx - 1] = members[idx];
+            }
+            return redis.srem(key, member, m);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String spop(final String key) {
+        try {
+            return redis.spop(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long smove(final String srckey, final String dstkey, final String member) {
+        try {
+            return redis.smove(srckey, dstkey, member) ? 1L : 0L;
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long scard(final String key) {
+        try {
+            return redis.scard(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Boolean sismember(final String key, final String member) {
+        try {
+            return redis.sismember(key, member);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> sinter(final String... keys) {
+        try {
+            String key = keys[0];
+            String[] k = new String[keys.length - 1];
+            for (int idx = 0; idx < keys.length; ++idx) {
+                k[idx - 1] = keys[idx];
+            }
+            return redis.sinter(key, k);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long sinterstore(final String dstkey, final String... keys) {
+        try {
+            String key = keys[0];
+            String[] k = new String[keys.length - 1];
+            for (int idx = 0; idx < keys.length; ++idx) {
+                k[idx - 1] = keys[idx];
+            }
+            return redis.sinterstore(dstkey, key, k);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> sunion(final String... keys) {
+        try {
+            String key = keys[0];
+            String[] k = new String[keys.length - 1];
+            for (int idx = 0; idx < keys.length; ++idx) {
+                k[idx - 1] = keys[idx];
+            }
+            return redis.sunion(key, k);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long sunionstore(final String dstkey, final String... keys) {
+        try {
+            String key = keys[0];
+            String[] k = new String[keys.length - 1];
+            for (int idx = 0; idx < keys.length; ++idx) {
+                k[idx - 1] = keys[idx];
+            }
+            return redis.sunionstore(dstkey, key, k);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> sdiff(final String... keys) {
+        try {
+            String key = keys[0];
+            String[] k = new String[keys.length - 1];
+            for (int idx = 0; idx < keys.length; ++idx) {
+                k[idx - 1] = keys[idx];
+            }
+            return redis.sdiff(key, k);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long sdiffstore(final String dstkey, final String... keys) {
+        try {
+            String key = keys[0];
+            String[] k = new String[keys.length - 1];
+            for (int idx = 0; idx < keys.length; ++idx) {
+                k[idx - 1] = keys[idx];
+            }
+            return redis.sdiffstore(dstkey, key, k);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+    /*
     public String srandmember(final String key) {
         checkIsInMulti();
         client.srandmember(key);
