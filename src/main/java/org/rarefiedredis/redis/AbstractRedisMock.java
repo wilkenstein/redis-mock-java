@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.Date;
 
-public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, IRedisSet, IRedisHash {
+public class AbstractRedisMock implements IRedis {
 
     public AbstractRedisMock() {
     }
@@ -376,5 +376,110 @@ public class AbstractRedisMock implements IRedisKeys, IRedisString, IRedisList, 
     @Override public ScanResult<Map<String, String>> hscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
+
+    /* IRedisTransaction commands */
+
+    @Override public String discard() throws NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public List<Object> exec() throws NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public IRedis multi() throws NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String unwatch() throws NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public String watch(String key) throws NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    /* IRedisSortedSet commands */
+
+    @Override public Long zadd(String key, Number score, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zcard(String key) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zcount(String key, Number min, Number max) throws WrongTypeException, NotImplementedException{ 
+        throw new NotImplementedException();
+    }
+
+    @Override public Number zincrby(String key, Number increment, String member) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zinterstore(String destination, int numkeys, String key, Object ... options) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zrange(String key, long start, long stop) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zrevrangebylex(String key, String max, String min) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zrank(String key, String member) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zrem(String key, String member) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zremrangebyscore(String key, Number min, Number max) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zrevrange(String key, long start, long stop) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zrevrangebyscore(String key, String max, String min) throws WrongTypeException, NotImplementedException {
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zrevrank(String key, String member) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Number zscore(String key, String member) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Long zunionstore(String destination, int numkeys, String key, Object ... options) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public String[] zscan(String key, Long cursor) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
 
 }

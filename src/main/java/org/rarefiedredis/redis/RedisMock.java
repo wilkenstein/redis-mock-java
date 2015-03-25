@@ -24,8 +24,12 @@ public final class RedisMock extends AbstractRedisMock {
     private RedisSetCache setCache;
     /** Cache to hold hashes. */
     private RedisHashCache hashCache;
+    /** List of all our caches. */
     private List<IRedisCache> caches;
+    /** Expiration timers. */
     private Map<String, Timer> timers;
+    /** Watchers. */
+    private Map<String, Boolean> watchers;
 
     /**
      * Default constructor. Initializes an empty redis
@@ -42,6 +46,7 @@ public final class RedisMock extends AbstractRedisMock {
         caches.add(setCache);
         caches.add(hashCache);
         timers = new HashMap<String, Timer>();
+        watchers = new HashMap<String, Boolean>();
     }
 
     private void checkType(String key, String type) throws WrongTypeException {
@@ -1217,6 +1222,33 @@ public final class RedisMock extends AbstractRedisMock {
             }
         }
         return new ScanResult<Map<String, String>>(idx, scanned);
+    }
+
+    /* IRedisTransaction commands */
+
+    @Override public IRedis multi() {
+        return new RedisMockMulti(this);
+    }
+
+    @Override public String unwatch() {
+        watchers.clear();
+        return "OK";
+    }
+
+    @Override public String watch(String key) {
+        watchers.put(key, false);
+        return "OK";
+    }
+
+    public boolean modified(String command, List<Object> args) {
+        if (command.equals("set")) {
+            return watchers.containsKey(args.get(0)) && watchers.get(args.get(0));
+        }
+        return false;
+    }
+
+    public void execd() {
+        watchers.clear();
     }
 
 }
