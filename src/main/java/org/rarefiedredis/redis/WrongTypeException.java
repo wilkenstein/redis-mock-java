@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 /**
  * Thrown when a redis command is attempted on a key that
  * holds a different type of key.

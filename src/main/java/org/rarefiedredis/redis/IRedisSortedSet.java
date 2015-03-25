@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 public interface IRedisSortedSet {
 
     Long zadd(String key, Number score, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException;

@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 /**
  * Interface for redis string commands.
  */

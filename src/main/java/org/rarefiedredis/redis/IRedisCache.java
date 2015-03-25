@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 /**
  * Interface for all key-value caches. An IRedisCache
  * caches (key, value, ...) tuples.

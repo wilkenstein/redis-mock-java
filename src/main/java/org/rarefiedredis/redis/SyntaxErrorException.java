@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 /**
  * Thrown when a redis command encounters a syntax error.
  */

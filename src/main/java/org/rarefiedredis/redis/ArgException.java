@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 public final class ArgException extends Exception {
     
     public ArgException(String command) {

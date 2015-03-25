@@ -1,3 +1,4 @@
+package org.rarefiedredis.redis;
 
 public final class GlobToRegEx {
 

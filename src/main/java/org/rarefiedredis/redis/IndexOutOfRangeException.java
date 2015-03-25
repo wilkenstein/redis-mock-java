@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 public final class IndexOutOfRangeException extends Exception {
     
     public IndexOutOfRangeException() {

@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 public final class ExecWithoutMultiException extends Exception {
     
     public ExecWithoutMultiException() {

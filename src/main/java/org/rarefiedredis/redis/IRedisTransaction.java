@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 import java.util.List;
 
 public interface IRedisTransaction {

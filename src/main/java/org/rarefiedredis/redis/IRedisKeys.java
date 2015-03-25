@@ -1,3 +1,5 @@
+package org.rarefiedredis.redis;
+
 public interface IRedisKeys {
 
     public Long del(String ... keys) throws NotImplementedException;
