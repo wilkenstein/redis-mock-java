@@ -4,15 +4,19 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Tuple;
 import redis.clients.jedis.BitOP;
+import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.exceptions.JedisException;
 
 import org.rarefiedredis.redis.AbstractRedisClient;
 import org.rarefiedredis.redis.NotImplementedException;
+import org.rarefiedredis.redis.ArgException;
+import org.rarefiedredis.redis.WrongTypeException;
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -25,7 +29,6 @@ public final class JedisIRedisClient extends AbstractRedisClient {
     public JedisIRedisClient(JedisPool pool) {
         this.pool = pool;
     }
-
     private Object command(String name, Object ... args) {
         Jedis jedis = null;
         Object ret = null;
@@ -40,7 +43,12 @@ public final class JedisIRedisClient extends AbstractRedisClient {
             ret = null;
         }
         catch (InvocationTargetException ite) {
+            // TODO: Throw exception instead?
             ret = null;
+        }
+        catch (JedisException je) {
+            String msg = je.getMessage();
+            // TODO: Interpret je and throw the right exception.
         }
         finally {
             if (jedis != null) {
@@ -209,6 +217,232 @@ public final class JedisIRedisClient extends AbstractRedisClient {
 
     @Override public Long strlen(String key) {
         return (Long)command("strlen", key);
+    }
+
+    @Override public String lindex(String key, long index) {
+        return (String)command("lindex", key, index);
+    }
+
+    @Override public Long linsert(String key, String before_after, String pivot, String value) {
+        return (Long)command("linsert", key, LIST_POSITION.valueOf(before_after), pivot, value);
+    }
+
+    @Override public Long llen(String key) {
+        return (Long)command("llen", key);
+    }
+
+    @Override public String lpop(String key) {
+        return (String)command("lpop", key);
+    }
+
+    @Override public Long lpush(String key, String element, String ... elements) {
+        String[] strings = new String[1 + elements.length];
+        strings[0] = element;
+        for (int idx = 0; idx < elements.length; ++idx) {
+            strings[idx + 1] = elements[idx];
+        }
+        return (Long)command("lpush", key, strings);
+    }
+
+    @Override public Long lpushx(String key, String element) {
+        return (Long)command("lpushx", key, element);
+    }
+
+    @Override public List<String> lrange(String key, long start, long end) {
+        return (List<String>)command("lrange", key, start, end);
+    }
+
+    @Override public Long lrem(String key, long count, String element) {
+        return (Long)command("lrem", key, count, element);
+    }
+
+    @Override public String lset(String key, long index, String element) {
+        return (String)command("lset", key, index, element);
+    }
+
+    @Override public String ltrim(String key, long start, long end) {
+        return (String)command("ltrim", key, start, end);
+    }
+
+    @Override public String rpop(String key) {
+        return (String)command("rpop", key);
+    }
+
+    @Override public String rpoplpush(String source, String dest) {
+        return (String)command("rpoplpush", source, dest);
+    }
+
+    @Override public Long rpush(String key, String element, String ... elements) {
+        String[] strings = new String[1 + elements.length];
+        strings[0] = element;
+        for (int idx = 0; idx < elements.length; ++idx) {
+            strings[idx + 1] = elements[idx];
+        }
+        return (Long)command("rpush", key, elements);
+    }
+
+    @Override public Long rpushx(String key, String element) {
+        return (Long)command("rpushx", key, element);
+    }
+
+    @Override public Long sadd(String key, String member, String ... members) {
+        String[] ms = new String[1 + members.length];
+        ms[0] = member;
+        for (int idx = 0; idx < members.length; ++idx) {
+            ms[idx + 1] = members[idx];
+        }
+        return (Long)command("sadd", key, ms);
+    }
+
+    @Override public Long scard(String key) {
+        return (Long)command("scard", key);
+    }
+
+    @Override public Set<String> sdiff(String key, String ... keys) {
+        String[] ks = new String[1 + keys.length];
+        ks[0] = key;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            ks[idx + 1] = keys[idx];
+        }
+        return (Set<String>)command("sdiff", new Object[] { ks });
+    }
+
+    @Override public Long sdiffstore(String destination, String key, String ... keys) {
+        String[] ks = new String[1 + keys.length];
+        ks[0] = key;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            ks[idx + 1] = keys[idx];
+        }
+        return (Long)command("sdiffstore", destination, ks);
+    }
+
+    @Override public Set<String> sinter(String key, String ... keys) {
+        String[] ks = new String[1 + keys.length];
+        ks[0] = key;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            ks[idx + 1] = keys[idx];
+        }
+        return (Set<String>)command("sinter", new Object[] { ks });
+    }
+
+    @Override public Long sinterstore(String destination, String key, String ... keys) {
+        String[] ks = new String[1 + keys.length];
+        ks[0] = key;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            ks[idx + 1] = keys[idx];
+        }
+        return (Long)command("sinterstore", destination, ks);
+    }
+
+    @Override public Boolean sismember(String key, String member) {
+        return (Boolean)command("sismember", key, member);
+    }
+
+    @Override public Set<String> smembers(String key) {
+        return (Set<String>)command("smembers", key);
+    }
+
+    @Override public Boolean smove(String source, String dest, String member) {
+        return (Long)command("smove", source, dest, member) == 1L;
+    }
+
+    @Override public String spop(String key) {
+        return (String)command("spop", key);
+    }
+
+    @Override public String srandmember(String key) {
+        return (String)command("srandmember", key);
+    }
+
+    @Override public List<String> srandmember(String key, long count) {
+        return (List<String>)command("srandmember", key, (int)count);
+    }
+
+    @Override public Long srem(String key, String member, String ... members) {
+        String[] ms = new String[1 + members.length];
+        ms[0] = member;
+        for (int idx = 0; idx < members.length; ++idx) {
+            ms[idx + 1] = members[idx];
+        }
+        return (Long)command("srem", key, ms);
+    }
+
+    @Override public Set<String> sunion(String key, String ... keys) {
+        String[] ks = new String[1 + keys.length];
+        ks[0] = key;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            ks[idx + 1] = keys[idx];
+        }
+        return (Set<String>)command("sunion", new Object[] { ks });
+    }
+
+    @Override public Long sunionstore(String destination, String key, String ... keys) {
+        String[] ks = new String[1 + keys.length];
+        ks[0] = key;
+        for (int idx = 0; idx < keys.length; ++idx) {
+            ks[idx + 1] = keys[idx];
+        }
+        return (Long)command("sunionstore", destination, ks);
+    }
+
+    @Override public Long hdel(String key, String field, String ... fields) {
+        String[] fs = new String[1 + fields.length];
+        fs[0] = field;
+        for (int idx = 0; idx < fields.length; ++idx) {
+            fs[idx + 1] = fields[idx];
+        }
+        return (Long)command("hdel", key, fs);
+    }
+
+    @Override public Boolean hexists(String key, String field) {
+        return (Boolean)command("hexists", key, field);
+    }
+
+    @Override public String hget(String key, String field) {
+        return (String)command("hget", key, field);
+    }
+
+    @Override public Map<String, String> hgetall(String key) {
+        return (Map<String, String>)command("hgetAll", key);
+    }
+
+    @Override public Long hincrby(String key, String field, long increment) {
+        return (Long)command("hincrBy", key, field, increment);
+    }
+
+    @Override public String hincrbyfloat(String key, String field, double increment) {
+        return String.valueOf((Double)command("hincrByFloat", key, field, increment));
+    }
+
+    @Override public Set<String> hkeys(String key) {
+        return (Set<String>)command("hkeys", key);
+    }
+
+    @Override public Long hlen(String key) {
+        return (Long)command("hlen", key);
+    }
+
+    @Override public List<String> hmget(String key, String field, String ... fields) {
+        String[] fs = new String[1 + fields.length];
+        fs[0] = field;
+        for (int idx = 0; idx < fields.length; ++idx) {
+            fs[idx + 1] = fields[idx];
+        }
+        return (List<String>)command("hmget", key, fs);
+    }
+
+    @Override public String hmset(String key, String field, String value, String ... fieldsvalues) throws ArgException {
+        if (fieldsvalues.length % 2 != 0) {
+            throw new ArgException("HMSET");
+        }
+        Map<String, String> hash = new HashMap<String, String>();
+        hash.put(field, value);
+        for (int idx = 0; idx < fieldsvalues.length; ++idx) {
+            if (idx % 2 == 0) {
+                hash.put(fieldsvalues[idx], fieldsvalues[idx + 1]);
+            }
+        }
+        return (String)command("hmset", key, hash);
     }
 
 }
