@@ -2,14 +2,14 @@ package org.rarefiedredis.redis;
 
 import java.util.List;
 
-public interface IRedis extends IRedisKeys, IRedisString, IRedisList, IRedisSet, IRedisSortedSet, IRedisHash, IRedisTransaction {
+public interface IRedis extends IRedisClient {
     /**
      * Create a client of this IRedis instance. This client connects to this instance
      * and passes commands to & from this instance.
      *
      * @return A client of this IRedis instance.
      */
-    IRedis createClient();
+    IRedisClient createClient();
     /**
      * Determine if a command might be operating on a modified key.
      * Useful for, e.g., watch/multi.

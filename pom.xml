@@ -4,7 +4,7 @@
   
   <groupId>org.rarefiedredis.redis</groupId>
   <artifactId>redis-java</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <packaging>jar</packaging>
   
   <name>redis-java</name>
@@ -30,7 +30,7 @@
       <name>Brian Wilke</name>
       <email>wilke.brian@gmail.com</email>
       <organization>Rarefied Redis</organization>
-      <organizationUrl>http://wilkenstein.github.io/rarefied-redis/</organizationUrl>
+      <organizationUrl>http://rarefiedredis.org</organizationUrl>
     </developer>
   </developers>
 

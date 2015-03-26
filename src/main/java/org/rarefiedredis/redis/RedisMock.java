@@ -74,13 +74,7 @@ public final class RedisMock extends AbstractRedisMock {
         throw new CloneNotSupportedException();
     }
 
-    /**
-     * Create a client of this instance. This client connects to this instance
-     * and passes commands to & from this instance.
-     *
-     * @return A client of this RedisMock instance.
-     */
-    @Override public IRedis createClient() {
+    @Override public IRedisClient createClient() {
         return new RedisMockClient(this);
     }
 
@@ -1305,7 +1299,7 @@ public final class RedisMock extends AbstractRedisMock {
         throw new ExecWithoutMultiException();
     }
 
-    @Override public IRedis multi() {
+    @Override public IRedisClient multi() {
         return new RedisMockMulti(this);
     }
 

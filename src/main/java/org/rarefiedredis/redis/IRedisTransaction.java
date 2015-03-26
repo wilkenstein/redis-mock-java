@@ -4,14 +4,14 @@ import java.util.List;
 
 public interface IRedisTransaction {
 
-    public String discard() throws DiscardWithoutMultiException, NotImplementedException;
+    String discard() throws DiscardWithoutMultiException, NotImplementedException;
 
-    public List<Object> exec() throws ExecWithoutMultiException, NotImplementedException;
+    List<Object> exec() throws ExecWithoutMultiException, NotImplementedException;
 
-    public IRedis multi() throws NotImplementedException;
+    IRedisClient multi() throws NotImplementedException;
 
-    public String unwatch() throws NotImplementedException;
+    String unwatch() throws NotImplementedException;
 
-    public String watch(String key) throws NotImplementedException;
+    String watch(String key) throws NotImplementedException;
 
 }

@@ -13,7 +13,7 @@ public final class RedisMockClient extends AbstractRedisMock {
         this.redisMock = redisMock;
     }
 
-    @Override public IRedis createClient() {
+    @Override public IRedisClient createClient() {
         return new RedisMockClient(redisMock);
     }
 
@@ -345,7 +345,7 @@ public final class RedisMockClient extends AbstractRedisMock {
         return redisMock.exec();
     }
 
-    @Override public IRedis multi() {
+    @Override public IRedisClient multi() {
         return new RedisMockMulti(this);
     }
 

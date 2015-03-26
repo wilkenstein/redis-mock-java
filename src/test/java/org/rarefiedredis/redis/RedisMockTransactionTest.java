@@ -26,7 +26,7 @@ public class RedisMockTransactionTest {
         RedisMock redis = new RedisMock();
         String k = "key";
         String v1 = "v1", v2 = "v2", v3 = "v3";
-        IRedis multi = redis.multi();
+        IRedisClient multi = redis.multi();
         try {
             multi.lpush(k, v1);
             multi.lpush(k, v2);
@@ -54,7 +54,7 @@ public class RedisMockTransactionTest {
         String v1 = "v1", v2 = "v2", v3 = "v3";
         String v = "v";
         assertEquals("OK", redis.watch(k));
-        IRedis multi = redis.multi();
+        IRedisClient multi = redis.multi();
         try {
             multi.lpush(k, v1);
             multi.lpush(k, v2);
@@ -79,7 +79,7 @@ public class RedisMockTransactionTest {
         String v = "v";
         assertEquals("OK", redis.watch(k1));
         assertEquals("OK", redis.watch(k2));
-        IRedis multi = redis.multi();
+        IRedisClient multi = redis.multi();
         try {
             multi.lpush(k1, v1);
             multi.rpush(k2, v2);
@@ -116,7 +116,7 @@ public class RedisMockTransactionTest {
 
     @Test public void watchShouldFailAllClientExecsThatAreWatchingTheSameKeyIfTheKeyChanges() {
         RedisMock redis = new RedisMock();
-        IRedis c1 = redis.createClient(), c2 = redis.createClient(), c3 = redis.createClient();
+        IRedisClient c1 = redis.createClient(), c2 = redis.createClient(), c3 = redis.createClient();
         String k = "key";
         String v = "v";
         try {
@@ -124,9 +124,9 @@ public class RedisMockTransactionTest {
             assertEquals("OK", c2.watch(k));
             assertEquals("OK", c3.watch(k));
             redis.lpush(k, v);
-            IRedis m1 = c1.multi();
-            IRedis m2 = c2.multi();
-            IRedis m3 = c3.multi();
+            IRedisClient m1 = c1.multi();
+            IRedisClient m2 = c2.multi();
+            IRedisClient m3 = c3.multi();
             m1.set(k, v);
             m2.sadd(k, v);
             m3.hset(k, v, v);
@@ -142,6 +142,7 @@ public class RedisMockTransactionTest {
             return;
         }
         catch (Exception e) {
+            e.printStackTrace();
         }
         assertEquals(false, true);
     }
@@ -151,7 +152,7 @@ public class RedisMockTransactionTest {
         String k = "key";
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
         try {
-            IRedis multi = redis.multi();
+            IRedisClient multi = redis.multi();
             multi.lpush(k, v1, v3, v4);
             multi.rpush(k, v2);
             List<Object> replies = multi.exec();
@@ -177,7 +178,7 @@ public class RedisMockTransactionTest {
         String v = "v";
         assertEquals("OK", redis.watch(k));
         try {
-            IRedis multi = redis.multi();
+            IRedisClient multi = redis.multi();
             multi.lpush(k, v1);
             multi.rpush(k, v2);
             multi.lpush(k, v3);
@@ -198,7 +199,7 @@ public class RedisMockTransactionTest {
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
         String v = "v";
         try {
-            IRedis multi = redis.multi();
+            IRedisClient multi = redis.multi();
             multi.del(k);
             multi.lpush(k, v1, v3, v4);
             multi.rpush(k, v2);

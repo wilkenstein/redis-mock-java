@@ -10,9 +10,9 @@ import java.util.Date;
 
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
 
-public abstract class AbstractRedisMock implements IRedis {
+public abstract class AbstractRedisClient implements IRedisClient {
 
-    public AbstractRedisMock() {
+    public AbstractRedisClient() {
     }
 
     /* IRedisKeys commands */
@@ -391,7 +391,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public IRedisClient multi() throws NotImplementedException {
+    @Override public IRedis multi() throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -488,11 +488,5 @@ public abstract class AbstractRedisMock implements IRedis {
     @Override public ScanResult<Set<ZsetPair>> zscan(String key, Long cursor, String ... options) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }
-
-    /** IRedis special overrides */
-
-    @Override public abstract IRedisClient createClient();
-
-    @Override public abstract boolean modified(Integer hashCode, String command, List<Object> args);
 
 }

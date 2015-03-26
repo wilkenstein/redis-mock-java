@@ -59,9 +59,6 @@ public final class RedisMockMulti extends AbstractRedisMock {
                                 returns.add(ret);
                             }
                             catch (Exception e) {
-                                if (command.command.equals("del")) {
-                                    e.printStackTrace();
-                                }
                                 returns.add(e);
                             }
                         }
@@ -77,6 +74,10 @@ public final class RedisMockMulti extends AbstractRedisMock {
         return returns;
     }
 
+    @Override public IRedisClient multi() {
+        return new RedisMockMulti(this.redisMock);
+    }
+
     @Override public synchronized String discard() throws NotImplementedException {
         commands.clear();
         return redisMock.unwatch();
@@ -90,7 +91,7 @@ public final class RedisMockMulti extends AbstractRedisMock {
         return redisMock.watch(key);
     }
 
-    @Override public IRedis createClient() {
+    @Override public IRedisClient createClient() {
         return redisMock.createClient();
     }
 
