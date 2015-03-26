@@ -413,11 +413,11 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Long zcount(String key, Double min, Double max) throws WrongTypeException, NotImplementedException{ 
+    @Override public Long zcount(String key, double min, double max) throws WrongTypeException, NotImplementedException{ 
         throw new NotImplementedException();
     }
 
-    @Override public Double zincrby(String key, Double increment, String member) throws WrongTypeException, NotImplementedException {
+    @Override public String zincrby(String key, double increment, String member) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

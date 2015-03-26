@@ -391,7 +391,7 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public IRedis multi() throws NotImplementedException {
+    @Override public IRedisClient multi() throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -413,11 +413,11 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public Long zcount(String key, Double min, Double max) throws WrongTypeException, NotImplementedException{ 
+    @Override public Long zcount(String key, double min, double max) throws WrongTypeException, NotImplementedException{ 
         throw new NotImplementedException();
     }
 
-    @Override public Double zincrby(String key, Double increment, String member) throws WrongTypeException, NotImplementedException {
+    @Override public String zincrby(String key, double increment, String member) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 

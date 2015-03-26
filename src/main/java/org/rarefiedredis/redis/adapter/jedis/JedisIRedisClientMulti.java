@@ -1,7 +1,8 @@
 package org.rarefiedredis.redis.adapter.jedis;
 
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Transaction;
+import redis.clients.jedis.Response;
 import redis.clients.jedis.Tuple;
 import redis.clients.jedis.BitOP;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
@@ -12,8 +13,6 @@ import org.rarefiedredis.redis.AbstractRedisClient;
 import org.rarefiedredis.redis.NotImplementedException;
 import org.rarefiedredis.redis.ArgException;
 import org.rarefiedredis.redis.WrongTypeException;
-import org.rarefiedredis.redis.DiscardWithoutMultiException;
-import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
 
 import java.util.List;
@@ -23,47 +22,34 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
-public final class JedisIRedisClient extends AbstractRedisClient {
+public final class JedisIRedisClientMulti extends AbstractRedisClient {
 
-    private JedisPool pool;
+    private Transaction transaction;
+    private Response lastResponse;
 
-    public JedisIRedisClient(JedisPool pool) {
-        this.pool = pool;
+    public JedisIRedisClientMulti(Jedis jedis) {
+        this.transaction = jedis.multi();
     }
+
     private Object command(String name, Object ... args) {
-        Jedis jedis = null;
-        Object ret = null;
         try {
-            jedis = pool.getResource();
-            Method[] methods = jedis.getClass().getDeclaredMethods();
-            for (Method method : methods) {
-                if (method.getName().equals(name)) {
-                    if (method.getParameterTypes().length == args.length) {
-                        ret = method.invoke(jedis, args);
-                    }
-                }
-            }
+            lastResponse = (Response)transaction.getClass().getDeclaredMethod(name).invoke(transaction, args);
+        }
+        catch (NoSuchMethodException nsme) {
         }
         catch (IllegalAccessException iae) {
-            ret = null;
         }
         catch (InvocationTargetException ite) {
             // TODO: Throw exception instead?
-            ret = null;
+            return null;
         }
-        catch (JedisException je) {
-            String msg = je.getMessage();
-            // TODO: Interpret je and throw the right exception.
-        }
-        finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-        }
-        return ret;
+        return null;
+    }
+
+    public Response getLastResponse() {
+        return lastResponse;
     }
 
     @Override public Long del(final String ... keys) {
@@ -75,7 +61,7 @@ public final class JedisIRedisClient extends AbstractRedisClient {
     }
 
     @Override public Boolean exists(final String key) {
-        return (Long)command("exists", key) == 1L;
+        return (Boolean)command("exists", key);
     }
 
     @Override public Boolean expireat(final String key, final long timestamp) {
@@ -469,29 +455,16 @@ public final class JedisIRedisClient extends AbstractRedisClient {
         return (List<String>)command("hvals", key);
     }
 
-    @Override public String discard() throws DiscardWithoutMultiException {
-        throw new DiscardWithoutMultiException();
+    @Override public String discard() {
+        return transaction.discard();
     }
 
-    @Override public List<Object> exec() throws ExecWithoutMultiException {
-        throw new ExecWithoutMultiException();
+    @Override public List<Object> exec() {
+        return transaction.exec();
     }
 
     @Override public IRedisClient multi() {
-        try {
-            return new JedisIRedisClientMulti(pool.getResource());
-        }
-        catch (Exception e) {
-            return null;
-        }
-    }
-
-    @Override public String unwatch() {
-        return (String)command("unwatch");
-    }
-
-    @Override public String watch(String key) {
-        return (String)command("watch", key);
+        return this;
     }
 
     @Override public Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) {

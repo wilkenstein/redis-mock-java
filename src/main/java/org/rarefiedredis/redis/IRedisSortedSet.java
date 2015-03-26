@@ -39,9 +39,9 @@ public interface IRedisSortedSet {
 
     Long zcard(String key) throws WrongTypeException, NotImplementedException;
 
-    Long zcount(String key, Double min, Double max) throws WrongTypeException, NotImplementedException;
+    Long zcount(String key, double min, double max) throws WrongTypeException, NotImplementedException;
 
-    Double zincrby(String key, Double increment, String member) throws WrongTypeException, NotImplementedException;
+    String zincrby(String key, double increment, String member) throws WrongTypeException, NotImplementedException;
 
     Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException;
 
