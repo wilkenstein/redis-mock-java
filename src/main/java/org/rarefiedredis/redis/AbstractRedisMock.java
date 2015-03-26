@@ -81,7 +81,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public String restore(String key, int ttl, String serialized_valued) throws NotImplementedException {
+    @Override public String restore(String key, int ttl, String serialized_value) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
