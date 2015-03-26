@@ -761,7 +761,7 @@ public class JedisAdapter extends Jedis {
 
     @Override public Double zincrby(final String key, final double score, final String member) {
         try {
-            return redis.zincrby(key, score, member);
+            return Double.parseDouble(redis.zincrby(key, score, member));
         }
         catch (Exception e) {
             throw new JedisException(e);
