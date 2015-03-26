@@ -16,7 +16,7 @@ public interface IRedisKeys {
 
     public String migrate(String host, int port, String key, String destination_db, int timeout, String ... options) throws NotImplementedException;
 
-    public Integer move(String key, String db) throws NotImplementedException;
+    public Long move(String key, int db) throws NotImplementedException;
 
     public Object object(String subcommand, String ... arguments) throws NotImplementedException;
 
@@ -26,19 +26,19 @@ public interface IRedisKeys {
 
     public Boolean pexpireat(String key, long timestamp) throws NotImplementedException;
 
-    public Integer pttl(String key) throws NotImplementedException;
+    public Long pttl(String key) throws NotImplementedException;
 
     public String randomkey() throws NotImplementedException;
 
     public String rename(String key, String newkey) throws NotImplementedException;
 
-    public Integer renamenx(String key, String newkey) throws NotImplementedException;
+    public Boolean renamenx(String key, String newkey) throws NotImplementedException;
 
     public String restore(String key, int ttl, String serialized_value) throws NotImplementedException;
 
     public String[] sort(String key, String ... options) throws NotImplementedException;
 
-    public Integer ttl(String key) throws NotImplementedException;
+    public Long ttl(String key) throws NotImplementedException;
 
     public String type(String key) throws NotImplementedException;
 

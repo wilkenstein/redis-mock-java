@@ -1,15 +1,18 @@
 package org.rarefiedredis.redis.adapter.jedis;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Tuple;
 import redis.clients.jedis.exceptions.JedisException;
 
 import org.rarefiedredis.redis.RedisMock;
 import org.rarefiedredis.redis.IRedis;
+import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 
 public class JedisAdapter extends Jedis {
 
@@ -23,6 +26,14 @@ public class JedisAdapter extends Jedis {
     public JedisAdapter(IRedis redis) {
         super("");
         this.redis = redis;
+    }
+
+    private Set<Tuple> toTupleSet(Set<ZsetPair> pairs) {
+        Set<Tuple> set = new HashSet<Tuple>();
+        for (ZsetPair pair : pairs) {
+            set.add(new Tuple(pair.member, pair.score));
+        }
+        return set;
     }
 
     @Override public String set(final String key, String value) {
@@ -131,19 +142,25 @@ public class JedisAdapter extends Jedis {
             throw new JedisException(e);
         }
     }
-    /*
-    public Long ttl(final String key) {
-        checkIsInMulti();
-        client.ttl(key);
-        return client.getIntegerReply();
+
+    @Override public Long ttl(final String key) {
+        try {
+            return redis.ttl(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
     
-    public Long move(final String key, final int dbIndex) {
-        checkIsInMulti();
-        client.move(key, dbIndex);
-        return client.getIntegerReply();
+    @Override public Long move(final String key, final int dbIndex) {
+        try {
+            return redis.move(key, dbIndex);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
-    */
+
     @Override public String getSet(final String key, final String value) {
         try {
             return redis.getset(key, value);
@@ -671,108 +688,161 @@ public class JedisAdapter extends Jedis {
             throw new JedisException(e);
         }
     }
+
+    @Override public String srandmember(final String key) {
+        try {
+            return redis.srandmember(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public List<String> srandmember(final String key, final int count) {
+        try {
+            return redis.srandmember(key, count);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long zadd(final String key, final double score, final String member) {
+        try {
+            return redis.zadd(key, new ZsetPair(member, score));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long zadd(final String key, final Map<String, Double> scoreMembers) {
+        try {
+            Double score = null;
+            String member = null;
+            List<ZsetPair> scoresmembers = new ArrayList<ZsetPair>((scoreMembers.size() - 1)*2);
+            for (String m : scoreMembers.keySet()) {
+                if (m == null) {
+                    member = m;
+                    score = scoreMembers.get(m);
+                    continue;
+                }
+                scoresmembers.add(new ZsetPair(m, scoreMembers.get(m)));
+            }
+            return redis.zadd(key, new ZsetPair(member, score), (ZsetPair[])scoresmembers.toArray());
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> zrange(final String key, final long start, final long end) {
+        try {
+            return ZsetPair.members(redis.zrange(key, start, end));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long zrem(final String key, final String... members) {
+        try {
+            String member = members[0];
+            String[] ms = new String[members.length - 1];
+            for (int idx = 1; idx < members.length; ++idx) {
+                ms[idx - 1] = members[idx];
+            }
+            return redis.zrem(key, member, ms);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Double zincrby(final String key, final double score, final String member) {
+        try {
+            return redis.zincrby(key, score, member);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long zrank(final String key, final String member) {
+        try {
+            return redis.zrank(key, member);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long zrevrank(final String key, final String member) {
+        try {
+            return redis.zrevrank(key, member);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> zrevrange(final String key, final long start, final long end) {
+        try {
+            return ZsetPair.members(redis.zrevrange(key, start, end));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrangeWithScores(final String key, final long start, final long end) {
+        try {
+            return toTupleSet(redis.zrange(key, start, end, "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrevrangeWithScores(final String key, final long start, final long end) {
+        try {
+            return toTupleSet(redis.zrevrange(key, start, end, "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Long zcard(final String key) {
+        try {
+            return redis.zcard(key);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Double zscore(final String key, final String member) {
+        try {
+            return zscore(key, member);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public String watch(final String ... keys) {
+        try {
+            for (String key : keys) {
+                redis.watch(key);
+            }
+            return "OK";
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
     /*
-    public String srandmember(final String key) {
-        checkIsInMulti();
-        client.srandmember(key);
-        return client.getBulkReply();
-    }
-
-    public List<String> srandmember(final String key, final int count) {
-        checkIsInMulti();
-        client.srandmember(key, count);
-        return client.getMultiBulkReply();
-    }
-
-    public Long zadd(final String key, final double score, final String member) {
-        checkIsInMulti();
-        client.zadd(key, score, member);
-        return client.getIntegerReply();
-    }
-
-    public Long zadd(final String key, final Map<String, Double> scoreMembers) {
-        checkIsInMulti();
-        client.zadd(key, scoreMembers);
-        return client.getIntegerReply();
-    }
-
-    public Set<String> zrange(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.zrange(key, start, end);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
-        }
-        return new LinkedHashSet<String>(members);
-    }
-
-    public Long zrem(final String key, final String... members) {
-        checkIsInMulti();
-        client.zrem(key, members);
-        return client.getIntegerReply();
-    }
-
-    public Double zincrby(final String key, final double score, final String member) {
-        checkIsInMulti();
-        client.zincrby(key, score, member);
-        String newscore = client.getBulkReply();
-        return Double.valueOf(newscore);
-    }
-
-    public Long zrank(final String key, final String member) {
-        checkIsInMulti();
-        client.zrank(key, member);
-        return client.getIntegerReply();
-    }
-
-    public Long zrevrank(final String key, final String member) {
-        checkIsInMulti();
-        client.zrevrank(key, member);
-        return client.getIntegerReply();
-    }
-
-    public Set<String> zrevrange(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.zrevrange(key, start, end);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
-        }
-        return new LinkedHashSet<String>(members);
-    }
-
-    public Set<Tuple> zrangeWithScores(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.zrangeWithScores(key, start, end);
-        Set<Tuple> set = getTupledSet();
-        return set;
-    }
-
-    public Set<Tuple> zrevrangeWithScores(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.zrevrangeWithScores(key, start, end);
-        Set<Tuple> set = getTupledSet();
-        return set;
-    }
-
-    public Long zcard(final String key) {
-        checkIsInMulti();
-        client.zcard(key);
-        return client.getIntegerReply();
-    }
-
-    public Double zscore(final String key, final String member) {
-        checkIsInMulti();
-        client.zscore(key, member);
-        final String score = client.getBulkReply();
-        return (score != null ? new Double(score) : null);
-    }
-
-    public String watch(final String... keys) {
-        client.watch(keys);
-        return client.getStatusCodeReply();
-    }
-
     public List<String> sort(final String key) {
         checkIsInMulti();
         client.sort(key);
@@ -846,201 +916,213 @@ public class JedisAdapter extends Jedis {
     public List<String> brpop(final int timeout, final String... keys) {
         return brpop(getArgsAddTimeout(timeout, keys));
     }
-
-    public Long zcount(final String key, final double min, final double max) {
-        checkIsInMulti();
-        client.zcount(key, min, max);
-        return client.getIntegerReply();
-    }
-
-    public Long zcount(final String key, final String min, final String max) {
-        checkIsInMulti();
-        client.zcount(key, min, max);
-        return client.getIntegerReply();
-    }
-
-    public Set<String> zrangeByScore(final String key, final double min, final double max) {
-        checkIsInMulti();
-        client.zrangeByScore(key, min, max);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+    */
+    @Override public Long zcount(final String key, final double min, final double max) {
+        try {
+            return redis.zcount(key, min, max);
         }
-        return new LinkedHashSet<String>(members);
-    }
-
-    public Set<String> zrangeByScore(final String key, final String min, final String max) {
-        checkIsInMulti();
-        client.zrangeByScore(key, min, max);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+        catch (Exception e) {
+            throw new JedisException(e);
         }
-        return new LinkedHashSet<String>(members);
     }
 
-    public Set<String> zrangeByScore(final String key, final double min, final double max,
-                                     final int offset, final int count) {
-        checkIsInMulti();
-        client.zrangeByScore(key, min, max, offset, count);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+    @Override public Long zcount(final String key, final String min, final String max) {
+        try {
+            return redis.zcount(key, Double.parseDouble(min), Double.parseDouble(max));
         }
-        return new LinkedHashSet<String>(members);
-    }
-
-    public Set<String> zrangeByScore(final String key, final String min, final String max,
-                                     final int offset, final int count) {
-        checkIsInMulti();
-        client.zrangeByScore(key, min, max, offset, count);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+        catch (Exception e) {
+            throw new JedisException(e);
         }
-        return new LinkedHashSet<String>(members);
     }
 
-    public Set<Tuple> zrangeByScoreWithScores(final String key, final double min, final double max) {
-        checkIsInMulti();
-        client.zrangeByScoreWithScores(key, min, max);
-        Set<Tuple> set = getTupledSet();
-        return set;
+    @Override public Set<String> zrangeByScore(final String key, final double min, final double max) {
+        try {
+            return ZsetPair.members(redis.zrangebyscore(key, String.valueOf(min), String.valueOf(max)));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<Tuple> zrangeByScoreWithScores(final String key, final String min, final String max) {
-        checkIsInMulti();
-        client.zrangeByScoreWithScores(key, min, max);
-        Set<Tuple> set = getTupledSet();
-        return set;
+    @Override public Set<String> zrangeByScore(final String key, final String min, final String max) {
+        try {
+            return ZsetPair.members(redis.zrangebyscore(key, min, max));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<Tuple> zrangeByScoreWithScores(final String key, final double min, final double max,
+    @Override public Set<String> zrangeByScore(final String key, final double min, final double max,
+                                               final int offset, final int count) {
+        try {
+            return ZsetPair.members(redis.zrangebyscore(key, String.valueOf(min), String.valueOf(max), "limit", String.valueOf(offset), String.valueOf(count)));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<String> zrangeByScore(final String key, final String min, final String max,
+                                               final int offset, final int count) {
+        try {
+            return ZsetPair.members(redis.zrangebyscore(key, min, max, "limit", String.valueOf(offset), String.valueOf(count)));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrangeByScoreWithScores(final String key, final double min, final double max) {
+        try {
+            return toTupleSet(redis.zrangebyscore(key, String.valueOf(min), String.valueOf(max), "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrangeByScoreWithScores(final String key, final String min, final String max) {
+        try {
+            return toTupleSet(redis.zrangebyscore(key, min, max, "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrangeByScoreWithScores(final String key, final double min, final double max,
+                                                        final int offset, final int count) {
+        try {
+            return toTupleSet(redis.zrangebyscore(key, String.valueOf(min), String.valueOf(max), "limit", String.valueOf(offset), String.valueOf(count), "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrangeByScoreWithScores(final String key, final String min, final String max,
                                               final int offset, final int count) {
-        checkIsInMulti();
-        client.zrangeByScoreWithScores(key, min, max, offset, count);
-        Set<Tuple> set = getTupledSet();
-        return set;
-    }
-
-    public Set<Tuple> zrangeByScoreWithScores(final String key, final String min, final String max,
-                                              final int offset, final int count) {
-        checkIsInMulti();
-        client.zrangeByScoreWithScores(key, min, max, offset, count);
-        Set<Tuple> set = getTupledSet();
-        return set;
-    }
-
-    private Set<Tuple> getTupledSet() {
-        checkIsInMulti();
-        List<String> membersWithScores = client.getMultiBulkReply();
-        if (membersWithScores == null) {
-            return null;
+        try {
+            return toTupleSet(redis.zrangebyscore(key, min, max, "limit", String.valueOf(offset), String.valueOf(count), "withscores"));
         }
-        Set<Tuple> set = new LinkedHashSet<Tuple>();
-        Iterator<String> iterator = membersWithScores.iterator();
-        while (iterator.hasNext()) {
-            set.add(new Tuple(iterator.next(), Double.valueOf(iterator.next())));
+        catch (Exception e) {
+            throw new JedisException(e);
         }
-        return set;
     }
 
-    public Set<String> zrevrangeByScore(final String key, final double max, final double min) {
-        checkIsInMulti();
-        client.zrevrangeByScore(key, max, min);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+    @Override public Set<String> zrevrangeByScore(final String key, final double max, final double min) {
+        try {
+            return ZsetPair.members(redis.zrevrangebyscore(key, String.valueOf(max), String.valueOf(min)));
         }
-        return new LinkedHashSet<String>(members);
-    }
-
-    public Set<String> zrevrangeByScore(final String key, final String max, final String min) {
-        checkIsInMulti();
-        client.zrevrangeByScore(key, max, min);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+        catch (Exception e) {
+            throw new JedisException(e);
         }
-        return new LinkedHashSet<String>(members);
     }
 
-    public Set<String> zrevrangeByScore(final String key, final double max, final double min,
-                                        final int offset, final int count) {
-        checkIsInMulti();
-        client.zrevrangeByScore(key, max, min, offset, count);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+    @Override public Set<String> zrevrangeByScore(final String key, final String max, final String min) {
+        try {
+            return ZsetPair.members(redis.zrevrangebyscore(key, max, min));
         }
-        return new LinkedHashSet<String>(members);
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<Tuple> zrevrangeByScoreWithScores(final String key, final double max, final double min) {
-        checkIsInMulti();
-        client.zrevrangeByScoreWithScores(key, max, min);
-        Set<Tuple> set = getTupledSet();
-        return set;
+    @Override public Set<String> zrevrangeByScore(final String key, final double max, final double min,
+                                                  final int offset, final int count) {
+        try {
+            return ZsetPair.members(redis.zrevrangebyscore(key, String.valueOf(max), String.valueOf(min), "limit", String.valueOf(offset), String.valueOf(count)));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<Tuple> zrevrangeByScoreWithScores(final String key, final double max,
-                                                 final double min, final int offset, final int count) {
-        checkIsInMulti();
-        client.zrevrangeByScoreWithScores(key, max, min, offset, count);
-        Set<Tuple> set = getTupledSet();
-        return set;
+    @Override public Set<Tuple> zrevrangeByScoreWithScores(final String key, final double max, final double min) {
+        try {
+            return toTupleSet(redis.zrevrangebyscore(key, String.valueOf(max), String.valueOf(min), "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<Tuple> zrevrangeByScoreWithScores(final String key, final String max,
+    @Override public Set<Tuple> zrevrangeByScoreWithScores(final String key, final double max,
+                                                           final double min, final int offset, final int count) {
+        try {
+            return toTupleSet(redis.zrevrangebyscore(key, String.valueOf(max), String.valueOf(min), "limit", String.valueOf(offset), String.valueOf(count), "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+
+    @Override public Set<Tuple> zrevrangeByScoreWithScores(final String key, final String max,
                                                  final String min, final int offset, final int count) {
-        checkIsInMulti();
-        client.zrevrangeByScoreWithScores(key, max, min, offset, count);
-        Set<Tuple> set = getTupledSet();
-        return set;
-    }
-
-    public Set<String> zrevrangeByScore(final String key, final String max, final String min,
-                                        final int offset, final int count) {
-        checkIsInMulti();
-        client.zrevrangeByScore(key, max, min, offset, count);
-        final List<String> members = client.getMultiBulkReply();
-        if (members == null) {
-            return null;
+        try {
+            return toTupleSet(redis.zrevrangebyscore(key, max, min, "limit", String.valueOf(offset), String.valueOf(count), "withscores"));
         }
-        return new LinkedHashSet<String>(members);
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Set<Tuple> zrevrangeByScoreWithScores(final String key, final String max, final String min) {
-        checkIsInMulti();
-        client.zrevrangeByScoreWithScores(key, max, min);
-        Set<Tuple> set = getTupledSet();
-        return set;
+    @Override public Set<String> zrevrangeByScore(final String key, final String max, final String min,
+                                                  final int offset, final int count) {
+        try {
+            return ZsetPair.members(redis.zrevrangebyscore(key, max, min, "limit", String.valueOf(offset), String.valueOf(count)));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long zremrangeByRank(final String key, final long start, final long end) {
-        checkIsInMulti();
-        client.zremrangeByRank(key, start, end);
-        return client.getIntegerReply();
+    @Override public Set<Tuple> zrevrangeByScoreWithScores(final String key, final String max, final String min) {
+        try {
+            return toTupleSet(redis.zrevrangebyscore(key, max, min, "withscores"));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long zremrangeByScore(final String key, final double start, final double end) {
-        checkIsInMulti();
-        client.zremrangeByScore(key, start, end);
-        return client.getIntegerReply();
+    @Override public Long zremrangeByRank(final String key, final long start, final long end) {
+        try {
+            return redis.zremrangebyrank(key, start, end);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long zremrangeByScore(final String key, final String start, final String end) {
-        checkIsInMulti();
-        client.zremrangeByScore(key, start, end);
-        return client.getIntegerReply();
+    @Override public Long zremrangeByScore(final String key, final double start, final double end) {
+        try {
+            return redis.zremrangebyscore(key, String.valueOf(start), String.valueOf(end));
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
-    public Long zunionstore(final String dstkey, final String... sets) {
-        checkIsInMulti();
-        client.zunionstore(dstkey, sets);
-        return client.getIntegerReply();
+    @Override public Long zremrangeByScore(final String key, final String start, final String end) {
+        try {
+            return redis.zremrangebyscore(key, start, end);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
     }
 
+    @Override public Long zunionstore(final String dstkey, final String... sets) {
+        try {
+            return redis.zunionstore(dstkey, sets.length, sets);
+        }
+        catch (Exception e) {
+            throw new JedisException(e);
+        }
+    }
+    /*
     public Long zunionstore(final String dstkey, final ZParams params, final String... sets) {
         checkIsInMulti();
         client.zunionstore(dstkey, params, sets);

@@ -1,45 +1,80 @@
 package org.rarefiedredis.redis;
 
+import java.util.Set;
+import java.util.HashSet;
+
 public interface IRedisSortedSet {
 
-    Long zadd(String key, Number score, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException;
+    public final class ZsetPair {
+
+        public String member;
+        public Double score;
+
+        public ZsetPair() {
+            this.member = null;
+            this.score = null;
+        }
+
+        public ZsetPair(String member) {
+            this.member = member;
+            this.score = null;
+        }
+
+        public ZsetPair(String member, Double score) {
+            this.member = member;
+            this.score = score;
+        }
+
+        public static Set<String> members(Set<ZsetPair> pairs) {
+            Set<String> set = new HashSet<String>();
+            for (ZsetPair pair : pairs) {
+                set.add(pair.member);
+            }
+            return set;
+        }
+
+    }
+
+    Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) throws WrongTypeException, NotImplementedException;
 
     Long zcard(String key) throws WrongTypeException, NotImplementedException;
 
-    Long zcount(String key, Number min, Number max) throws WrongTypeException, NotImplementedException;
+    Long zcount(String key, Double min, Double max) throws WrongTypeException, NotImplementedException;
 
-    Number zincrby(String key, Number increment, String member) throws WrongTypeException, NotImplementedException;
+    Double zincrby(String key, Double increment, String member) throws WrongTypeException, NotImplementedException;
 
-    Long zinterstore(String destination, int numkeys, String key, Object ... options) throws WrongTypeException, NotImplementedException;
+    Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException;
 
     Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException;
 
-    String[] zrange(String key, long start, long stop) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException;
 
-    String[] zrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException;
 
-    String[] zrevrangebylex(String key, String max, String min) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrevrangebylex(String key, String max, String min, String ... options) throws WrongTypeException, NotImplementedException;
 
-    String[] zrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrangebyscore(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException;
 
     Long zrank(String key, String member) throws WrongTypeException, NotImplementedException;
 
-    Long zrem(String key, String member) throws WrongTypeException, NotImplementedException;
+    Long zrem(String key, String member, String ... members) throws WrongTypeException, NotImplementedException;
 
     Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException;
 
-    Long zremrangebyscore(String key, Number min, Number max) throws WrongTypeException, NotImplementedException;
+    Long zremrangebyrank(String key, long start, long stop) throws WrongTypeException, NotImplementedException;
 
-    String[] zrevrange(String key, long start, long stop) throws WrongTypeException, NotImplementedException;
+    Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException;
 
-    String[] zrevrangebyscore(String key, String max, String min) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException;
+
+    Set<ZsetPair> zrevrangebyscore(String key, String max, String min, String ... options) throws WrongTypeException, NotImplementedException;
 
     Long zrevrank(String key, String member) throws WrongTypeException, NotImplementedException;
 
-    Number zscore(String key, String member) throws WrongTypeException, NotImplementedException;
+    Double zscore(String key, String member) throws WrongTypeException, NotImplementedException;
 
-    Long zunionstore(String destination, int numkeys, String key, Object ... options) throws WrongTypeException, NotImplementedException;
+    Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException;
 
-    String[] zscan(String key, Long cursor) throws WrongTypeException, NotImplementedException;
+    ScanResult<Set<ZsetPair>> zscan(String key, Long cursor, String ... options) throws WrongTypeException, NotImplementedException;
 
 }

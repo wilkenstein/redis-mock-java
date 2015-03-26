@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.Date;
 
+import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
+
 public abstract class AbstractRedisMock implements IRedis {
 
     public AbstractRedisMock() {
@@ -43,7 +45,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Integer move(String key, String db) throws NotImplementedException {
+    @Override public Long move(String key, int db) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -63,7 +65,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Integer pttl(String key) throws NotImplementedException {
+    @Override public Long pttl(String key) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -75,7 +77,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Integer renamenx(String key, String newkey) throws NotImplementedException {
+    @Override public Boolean renamenx(String key, String newkey) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -87,7 +89,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Integer ttl(String key) throws NotImplementedException {
+    @Override public Long ttl(String key) throws NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -403,7 +405,7 @@ public abstract class AbstractRedisMock implements IRedis {
 
     /* IRedisSortedSet commands */
 
-    @Override public Long zadd(String key, Number score, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException{
+    @Override public Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }
 
@@ -411,59 +413,63 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Long zcount(String key, Number min, Number max) throws WrongTypeException, NotImplementedException{ 
+    @Override public Long zcount(String key, Double min, Double max) throws WrongTypeException, NotImplementedException{ 
         throw new NotImplementedException();
     }
 
-    @Override public Number zincrby(String key, Number increment, String member) throws WrongTypeException, NotImplementedException{
+    @Override public Double zincrby(String key, Double increment, String member) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Long zinterstore(String destination, int numkeys, String key, Object ... options) throws WrongTypeException, NotImplementedException{
+    @Override public Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+    @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String[] zrange(String key, long start, long stop) throws WrongTypeException, NotImplementedException{
+    @Override public Set<ZsetPair> zrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String[] zrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+    @Override public Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String[] zrevrangebylex(String key, String max, String min) throws WrongTypeException, NotImplementedException{
+    @Override public Set<ZsetPair> zrevrangebylex(String key, String max, String min, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String[] zrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+    @Override public Set<ZsetPair> zrangebyscore(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Long zrank(String key, String member) throws WrongTypeException, NotImplementedException{
+    @Override public Long zrank(String key, String member) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Long zrem(String key, String member) throws WrongTypeException, NotImplementedException{
+    @Override public Long zrem(String key, String member, String ... members) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException{
+    @Override public Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public Long zremrangebyscore(String key, Number min, Number max) throws WrongTypeException, NotImplementedException{
+    @Override public Long zremrangebyrank(String key, long start, long stop) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String[] zrevrange(String key, long start, long stop) throws WrongTypeException, NotImplementedException{
+    @Override public Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
-    @Override public String[] zrevrangebyscore(String key, String max, String min) throws WrongTypeException, NotImplementedException {
+    @Override public Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException{
+        throw new NotImplementedException();
+    }
+
+    @Override public Set<ZsetPair> zrevrangebyscore(String key, String max, String min, String ... options) throws WrongTypeException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -471,15 +477,15 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public Number zscore(String key, String member) throws WrongTypeException, NotImplementedException{
+    @Override public Double zscore(String key, String member) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }
 
-    @Override public Long zunionstore(String destination, int numkeys, String key, Object ... options) throws WrongTypeException, NotImplementedException{
+    @Override public Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }
 
-    @Override public String[] zscan(String key, Long cursor) throws WrongTypeException, NotImplementedException{
+    @Override public ScanResult<Set<ZsetPair>> zscan(String key, Long cursor, String ... options) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }
 
