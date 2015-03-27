@@ -20,6 +20,7 @@ public interface IRedisString {
      * Count the number of set bits in a string.
      *
      * @param key The key
+     * @param options start, end
      *
      * @throws WrongTypeException If key is not a string
      * @throws NotImplementedException If the command is unimplemented.
@@ -45,6 +46,7 @@ public interface IRedisString {
      *
      * @param key The key
      * @param bit 0|1
+     * @param options start, end
      *
      * @throws WrongTypeException If key is not a string
      * @throws BitArgException If bit is not equal to 0 or 1
@@ -143,6 +145,7 @@ public interface IRedisString {
      * Increment the number stored at key by the given increment.
      *
      * @param key The key
+     * @param increment The increment to increase the key by
      *
      * @throws WrongTypeException If key is not a string
      * @throws NotIntegerException If key does not hold an integer value
@@ -155,6 +158,7 @@ public interface IRedisString {
      * Increment the number stored at key by the given increment.
      *
      * @param key The key
+     * @param increment The increment to increase the key by
      *
      * @throws WrongTypeException If key is not a string
      * @throws NotFloatException If key does not hold a floating point value
@@ -167,6 +171,8 @@ public interface IRedisString {
      * Returns the values of all specified keys. If a given key does not hold a string value,
      * or does not exist, null is returned for that key in the returned array.
      *
+     * @param keys The keys to get
+     *
      * @throws NotImplementedException If the command is unimplemented.
      *
      * @return List of values at the specified keys
@@ -175,15 +181,19 @@ public interface IRedisString {
     /**
      * Sets the given keys to their respective values. Existing keys will be overwritten.
      *
+     * @param keysvalues The key-value pairs to set.
+     *
      * @throws ArgException If the given arguments are not valid
      * @throws NotImplementedException If the command is unimplemented.
      *
      * @return "OK"
      */
-    String mset(String ... keyvalues) throws ArgException, NotImplementedException;
+    String mset(String ... keysvalues) throws ArgException, NotImplementedException;
     /**
      * Sets the given keys to their respective values. If at least one of the keys already
      * exists, none of the keys are set.
+     *
+     * @param keysvalues The key-value pairs to set.
      *
      * @throws ArgException If the given arguments are not valid
      * @throws NotImplementedException If the command is unimplemented.
@@ -191,7 +201,7 @@ public interface IRedisString {
      * @return 1 if all of the keys were set, or 0 if at least 1 key already existed and
      *         no operation was performed.
      */
-    Boolean msetnx(String ... keyvalues) throws ArgException, NotImplementedException;
+    Boolean msetnx(String ... keysvalues) throws ArgException, NotImplementedException;
     /**
      * Set and expire a key in milliseconds.
      *
@@ -209,6 +219,7 @@ public interface IRedisString {
      *
      * @param key The key
      * @param value The value
+     * @param options nx|xx, ex|px timeout.
      *
      * @throws NotImplementedException If the command is unimplemented.
      * @throws SyntaxErrorException If the given options were not valid.
