@@ -51,18 +51,19 @@ public final class RedisMockMulti extends AbstractRedisMock {
                 }
             }
             for (MultiCommand command : commands) {
-                for (Method method : methods) {
-                    if (method.getName().equals(command.command)) {
-                        if (method.getParameterTypes().length == command.args.size()) {
-                            try {
-                                Object ret = method.invoke(redisMock, command.args.toArray());
-                                returns.add(ret);
-                            }
-                            catch (Exception e) {
-                                returns.add(e);
-                            }
-                        }
-                    }
+                Class<?>[] parameterTypes = new Class<?>[command.args.size()];
+                for (int idx = 0; idx < parameterTypes.length; ++idx) {
+                    parameterTypes[idx] = command.args.get(idx).getClass();
+                }
+                try {
+                    Object ret = redisMock
+                        .getClass()
+                        .getDeclaredMethod(command.command, parameterTypes)
+                        .invoke(redisMock, command.args.toArray());
+                    returns.add(ret);
+                }
+                catch (Exception e) {
+                    returns.add(e);
                 }
             }
             try {

@@ -38,14 +38,18 @@ public final class JedisIRedisClient extends AbstractRedisClient {
         Object ret = null;
         try {
             jedis = pool.getResource();
-            Method[] methods = jedis.getClass().getDeclaredMethods();
-            for (Method method : methods) {
-                if (method.getName().equals(name)) {
-                    if (method.getParameterTypes().length == args.length) {
-                        ret = method.invoke(jedis, args);
-                    }
-                }
+            Class<?>[] parameterTypes = new Class<?>[args.length];
+            for (int idx = 0; idx < args.length; ++idx) {
+                parameterTypes[idx] = args[idx].getClass();
             }
+            ret = jedis
+                .getClass()
+                .getDeclaredMethod(name, parameterTypes)
+                .invoke(jedis, args);
+        }
+        catch (NoSuchMethodException nsme) {
+            // TODO: Throw exception instead?
+            ret = null;
         }
         catch (IllegalAccessException iae) {
             ret = null;
