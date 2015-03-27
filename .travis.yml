@@ -7,3 +7,4 @@ jdk:
 after_script:
 - mvn cobertura:cobertura
 - mvn site
+- mvn integration-test

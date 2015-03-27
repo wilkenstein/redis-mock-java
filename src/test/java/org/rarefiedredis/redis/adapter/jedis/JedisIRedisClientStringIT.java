@@ -26,6 +26,13 @@ public class JedisIRedisClientStringIT {
         rander = new RandomKey();
     }
 
+    @Test public void appendShouldCreateKeyIfItDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
+        String v = "value";
+        assertEquals((long)v.length(), (long)client.append(k, v));
+        assertEquals(v, client.get(k));
+    }
+
     @Test public void setShouldSetAKeyToAStringValue() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
         String k = rander.randkey();
         String v = "value";

@@ -57,9 +57,7 @@ $ mvn test
 * 1.0.0
   - Support for different versions of mock redis that mimic different
     redis versions.
-  - Support for multiple mock redis instances.
-  - Support for migrating data between mock redis instances.
-  - Server support.
+  - Lua scripting support.
 * 2.0.0
   - Support for migrating data from a mock redis instance to a real
     redis instance.
@@ -68,6 +66,11 @@ $ mvn test
 
 ## Versions
 
+* 0.0.5
+  - All transaction commands implemented.
+  - All transaction commands unit-tested.
+  - Jedis adapters implemented.
+  - Preliminary unit-tests on jedis adapters.
 * 0.0.4
   - All hash commands implemented.
   - All hash commands unit-tested.

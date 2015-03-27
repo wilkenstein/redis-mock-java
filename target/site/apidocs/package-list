@@ -1,1 +1,2 @@
-
+org.rarefiedredis.redis
+org.rarefiedredis.redis.adapter.jedis

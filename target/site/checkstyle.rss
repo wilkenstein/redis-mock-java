@@ -25,8 +25,8 @@ under the License.
     <language>en-us</language>
     <copyright>&#169;2015</copyright>
     <item>
-      <title>File: 29,
-             Errors: 1040,
+      <title>File: 39,
+             Errors: 3002,
              Warnings: 0,
              Infos: 0
       </title>
@@ -55,7 +55,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  307
+                  341
                 </td>
               </tr>
                           <tr>
@@ -69,7 +69,35 @@ under the License.
                   0
                 </td>
                 <td>
-                  61
+                  58
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedisClient.java">org/rarefiedredis/redis/IRedisClient.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  2
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.ExecWithoutMultiException.java">org/rarefiedredis/redis/ExecWithoutMultiException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
                 </td>
               </tr>
                           <tr>
@@ -102,6 +130,20 @@ under the License.
               </tr>
                           <tr>
                 <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedis.java">org/rarefiedredis/redis/IRedis.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  7
+                </td>
+              </tr>
+                          <tr>
+                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.RedisHashCache.java">org/rarefiedredis/redis/RedisHashCache.java</a>
                 </td>
                 <td>
@@ -126,6 +168,34 @@ under the License.
                 </td>
                 <td>
                   0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.AbstractRedisClient.java">org/rarefiedredis/redis/AbstractRedisClient.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  489
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.adapter.jedis.JedisAdapter.java">org/rarefiedredis/redis/adapter/jedis/JedisAdapter.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  327
                 </td>
               </tr>
                           <tr>
@@ -196,6 +266,34 @@ under the License.
                 </td>
                 <td>
                   3
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.adapter.jedis.JedisIRedisClientMulti.java">org/rarefiedredis/redis/adapter/jedis/JedisIRedisClientMulti.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  296
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.RedisMockClient.java">org/rarefiedredis/redis/RedisMockClient.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  156
                 </td>
               </tr>
                           <tr>
@@ -279,7 +377,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  11
+                  8
                 </td>
               </tr>
                           <tr>
@@ -438,6 +536,20 @@ under the License.
               </tr>
                           <tr>
                 <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.DiscardWithoutMultiException.java">org/rarefiedredis/redis/DiscardWithoutMultiException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
+                </td>
+              </tr>
+                          <tr>
+                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.AbstractRedisMock.java">org/rarefiedredis/redis/AbstractRedisMock.java</a>
                 </td>
                 <td>
@@ -447,7 +559,35 @@ under the License.
                   0
                 </td>
                 <td>
-                  367
+                  492
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.RedisMockMulti.java">org/rarefiedredis/redis/RedisMockMulti.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  226
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.adapter.jedis.JedisIRedisClient.java">org/rarefiedredis/redis/adapter/jedis/JedisIRedisClient.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  300
                 </td>
               </tr>
                       </tbody>
