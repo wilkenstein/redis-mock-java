@@ -58,6 +58,12 @@
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
+    <!-- luaj -->
+    <dependency>
+      <groupId>org.luaj</groupId>
+      <artifactId>luaj-jse</artifactId>
+      <version>3.0</version>
+    </dependency>
     <!-- JUnit -->
     <dependency>
       <groupId>junit</groupId>
