@@ -221,6 +221,26 @@ public class RedisMockTransactionTest {
         assertEquals(false, true);
     }
 
+    @Test public void multiShouldDoLsetAndLrem() {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
+        String v = "v";
+        try {
+            redis.rpush(k, v1, v2, v3, v4);
+            IRedisClient multi = redis.multi();
+            multi.lset(k, 1L, v);
+            multi.lrem(k, 1L, v);
+            multi.exec();
+            assertEquals(3L, (long)redis.llen(k));
+            assertEquals(v3, redis.lindex(k, 1L));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
     @Ignore("pending") @Test public void multiShouldBeAbleToExecuteEveryCommand() {
     }
 

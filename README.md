@@ -8,7 +8,13 @@ An in-memory redis-compatible implementation written in pure Java. Part of the [
 
 ### maven
 
-TODO
+````xml
+<dependency>
+  <groupId>org.rarefiedredis.redis</groupId>
+  <artifactId>redis-java</artifactId>
+  <version>0.0.5</version>
+</dependency>
+````
 
 ## Usage
 
@@ -66,6 +72,9 @@ $ mvn test
 
 ## Versions
 
+* 0.0.6
+  - Fix multi bug with primitive data types, e.g., lset.
+  - Lua scripting support started.
 * 0.0.5
   - All transaction commands implemented.
   - All transaction commands unit-tested.

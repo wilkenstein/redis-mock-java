@@ -54,6 +54,14 @@ public final class RedisMockMulti extends AbstractRedisMock {
                 Class<?>[] parameterTypes = new Class<?>[command.args.size()];
                 for (int idx = 0; idx < parameterTypes.length; ++idx) {
                     parameterTypes[idx] = command.args.get(idx).getClass();
+                    // Convert Object classes into primitive data type classes where appropriate.
+                    // TODO: This sucks, but I don't have a better way right now
+                    if (parameterTypes[idx].equals(Long.class)) {
+                        parameterTypes[idx] = long.class;
+                    }
+                    if (parameterTypes[idx].equals(Double.class)) {
+                        parameterTypes[idx] = double.class;
+                    }
                 }
                 try {
                     Object ret = redisMock
@@ -63,6 +71,7 @@ public final class RedisMockMulti extends AbstractRedisMock {
                     returns.add(ret);
                 }
                 catch (Exception e) {
+                    e.printStackTrace();
                     returns.add(e);
                 }
             }
