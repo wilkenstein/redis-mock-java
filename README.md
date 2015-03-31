@@ -72,6 +72,8 @@ $ mvn test
 
 ## Versions
 
+* 0.0.9
+  - Hotfix for NullPointerException in smove in AbstractJedisIRedisClientAdapter.
 * 0.0.8
   - Implement transaction commands in JedisIRedisClientAdapter.
   - Unit-test transaction commands in JedisIRedisClientAdater.
