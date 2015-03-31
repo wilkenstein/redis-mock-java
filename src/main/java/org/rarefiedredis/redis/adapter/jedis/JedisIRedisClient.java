@@ -4,17 +4,26 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Tuple;
 import redis.clients.jedis.BitOP;
+import redis.clients.jedis.BitPosParams;
+import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.exceptions.JedisException;
 
 import org.rarefiedredis.redis.IRedisClient;
 import org.rarefiedredis.redis.AbstractRedisClient;
-import org.rarefiedredis.redis.NotImplementedException;
-import org.rarefiedredis.redis.ArgException;
-import org.rarefiedredis.redis.WrongTypeException;
-import org.rarefiedredis.redis.DiscardWithoutMultiException;
-import org.rarefiedredis.redis.ExecWithoutMultiException;
+import org.rarefiedredis.redis.ScanResult;
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
+import org.rarefiedredis.redis.ArgException;
+import org.rarefiedredis.redis.NoKeyException;
+import org.rarefiedredis.redis.BitArgException;
+import org.rarefiedredis.redis.NotFloatException;
+import org.rarefiedredis.redis.WrongTypeException;
+import org.rarefiedredis.redis.NotIntegerException;
+import org.rarefiedredis.redis.SyntaxErrorException;
+import org.rarefiedredis.redis.NotImplementedException;
+import org.rarefiedredis.redis.IndexOutOfRangeException;
+import org.rarefiedredis.redis.ExecWithoutMultiException;
+import org.rarefiedredis.redis.DiscardWithoutMultiException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -33,6 +42,7 @@ public final class JedisIRedisClient extends AbstractRedisClient {
     public JedisIRedisClient(JedisPool pool) {
         this.pool = pool;
     }
+
     private Object command(String name, Object ... args) {
         Jedis jedis = null;
         Object ret = null;
@@ -40,26 +50,59 @@ public final class JedisIRedisClient extends AbstractRedisClient {
             jedis = pool.getResource();
             Class<?>[] parameterTypes = new Class<?>[args.length];
             for (int idx = 0; idx < args.length; ++idx) {
-                parameterTypes[idx] = args[idx].getClass();
+                if (args[idx] != null) {
+                    parameterTypes[idx] = args[idx].getClass();
+                    // Convert Object classes into primitive data type classes where appropriate.
+                    // TODO: This sucks, but I don't have a better way right now
+                    if (parameterTypes[idx].equals(Integer.class)) {
+                        parameterTypes[idx] = int.class;
+                    }
+                    if (parameterTypes[idx].equals(Long.class)) {
+                        parameterTypes[idx] = long.class;
+                    }
+                    if (parameterTypes[idx].equals(Double.class)) {
+                        parameterTypes[idx] = double.class;
+                    }
+                }
             }
             ret = jedis
                 .getClass()
                 .getDeclaredMethod(name, parameterTypes)
                 .invoke(jedis, args);
         }
-        catch (NoSuchMethodException nsme) {
+        catch (NoSuchMethodException e) {
             // TODO: Throw exception instead?
             ret = null;
+            e.printStackTrace();
         }
-        catch (IllegalAccessException iae) {
+        catch (IllegalAccessException e) {
             ret = null;
+            e.printStackTrace();
         }
-        catch (InvocationTargetException ite) {
-            // TODO: Throw exception instead?
+        catch (InvocationTargetException e) {
             ret = null;
-        }
-        catch (JedisException je) {
-            String msg = je.getMessage();
+            String msg = e.getCause().getMessage();
+            if (msg.contains("WRONGTYPE")) {
+                ret = new WrongTypeException();
+            }
+            else if (msg.contains("no such key")) {
+                ret = new NoKeyException();
+            }
+            else if (msg.contains("index out of range")) {
+                ret = new IndexOutOfRangeException();
+            }
+            else if (msg.contains("value is not an integer")) {
+                ret = new NotIntegerException();
+            }
+            else if (msg.contains("value is not a valid float")) {
+                ret = new NotFloatException();
+            }
+            else if (msg.contains("syntax error")) {
+                ret = new SyntaxErrorException();
+            }
+            else if (msg.contains("wrong number of arguments")) {
+                ret = new ArgException(e.getCause());
+            }
             // TODO: Interpret je and throw the right exception.
         }
         finally {
@@ -79,7 +122,7 @@ public final class JedisIRedisClient extends AbstractRedisClient {
     }
 
     @Override public Boolean exists(final String key) {
-        return (Long)command("exists", key) == 1L;
+        return (Boolean)command("exists", key);
     }
 
     @Override public Boolean expireat(final String key, final long timestamp) {
@@ -126,64 +169,185 @@ public final class JedisIRedisClient extends AbstractRedisClient {
         return (String)command("type", key);
     }
 
-    @Override public Long append(final String key, final String value) {
-        return (Long)command("append", key, value);
-    }
-
-    @Override public Long bitcount(final String key, final long ... options) {
-        if (options.length == 2) {
-            return (Long)command("bitcount", key, options[0], options[1]);
+    @Override public Long append(final String key, final String value) throws WrongTypeException {
+        Object ret = command("append", key, value);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
         }
-        return (Long)command("bitcount", key);
+        return (Long)ret;
     }
 
-    @Override public Long bitop(final String operation, final String destkey, final String ... keys) {
-        BitOP op = BitOP.valueOf(operation);
-        return (Long)command("bitop", op, destkey, keys);
+    @Override public Long bitcount(final String key, final long ... options) throws WrongTypeException {
+        if (options.length > 0) {
+            long start, end;
+            start = options[0];
+            if (options.length == 1) {
+                end = -1L;
+            }
+            else {
+                end = options[1];
+            }
+            Object ret = command("bitcount", key, start, end);
+            if (ret instanceof WrongTypeException) {
+                throw (WrongTypeException)ret;
+            }
+            return (Long)ret;
+        }
+        Object ret = command("bitcount", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long decr(final String key) {
-        return (Long)command("decr", key);
+    @Override public Long bitop(final String operation, final String destkey, final String ... keys) throws WrongTypeException {
+        BitOP op = null;
+        if (operation.toLowerCase().equals("and")) {
+            op = BitOP.AND;
+        }
+        else if (operation.toLowerCase().equals("or")) {
+            op = BitOP.OR;
+        }
+        else if (operation.toLowerCase().equals("xor")) {
+            op = BitOP.XOR;
+        }
+        else if (operation.toLowerCase().equals("not")) {
+            op = BitOP.NOT;
+        }
+        Object ret = command("bitop", op, destkey, keys);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long decrby(final String key, final long decrement) {
-        return (Long)command("decrBy", key, decrement);
+    @Override public Long bitpos(String key, long bit, long ... options) throws WrongTypeException, BitArgException {
+        if (bit != 0L && bit != 1L) {
+            throw new BitArgException();
+        }
+        BitPosParams params = null;
+        if (options.length > 0) {
+            if (options.length > 1) {
+                params = new BitPosParams(options[0], options[1]);
+            }
+            else {
+                params = new BitPosParams(options[0]);
+            }
+        }
+        boolean value = (bit == 1L);
+        Object ret = command("bitpos", key, value, params);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public String get(final String key) {
-        return (String)command("get", key);
+    @Override public Long decr(final String key) throws WrongTypeException, NotIntegerException {
+        Object ret = command("decr", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotIntegerException) {
+            throw (NotIntegerException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Boolean getbit(final String key, final long offset) {
-        return (Boolean)command("getbit", key, offset);
+    @Override public Long decrby(final String key, final long decrement) throws WrongTypeException, NotIntegerException {
+        Object ret = command("decrBy", key, decrement);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotIntegerException) {
+            throw (NotIntegerException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public String getrange(final String key, final long start, final long end) {
-        return (String)command("getrange", key, start, end);
+    @Override public String get(final String key) throws WrongTypeException {
+        Object ret = command("get", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public String getset(final String key, final String value) {
-        return (String)command("getSet", key, value);
+    @Override public Boolean getbit(final String key, final long offset) throws WrongTypeException {
+        Object ret = command("getbit", key, offset);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Boolean)ret;
     }
 
-    @Override public Long incr(String key) {
-        return (Long)command("incr", key);
+    @Override public String getrange(final String key, final long start, final long end) throws WrongTypeException {
+        Object ret = command("getrange", key, start, end);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public Long incrby(String key, long increment) {
-        return (Long)command("incrBy", key, increment);
+    @Override public String getset(final String key, final String value) throws WrongTypeException {
+        Object ret = command("getSet", key, value);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public String incrbyfloat(String key, double increment) {
-        return String.valueOf((Double)command("incrByFloat", key, increment));
+    @Override public Long incr(String key) throws WrongTypeException, NotIntegerException {
+        Object ret = command("incr", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotIntegerException) {
+            throw (NotIntegerException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public String mset(String ... keysvalues) {
-        return (String)command("mset", new Object[] { keysvalues });
+    @Override public Long incrby(String key, long increment) throws WrongTypeException, NotIntegerException {
+        Object ret = command("incrBy", key, increment);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotIntegerException) {
+            throw (NotIntegerException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Boolean msetnx(String ... keysvalues) {
-        return (Long)command("msetnx", keysvalues) == 1L;
+    @Override public String incrbyfloat(String key, double increment) throws WrongTypeException, NotFloatException {
+        Object ret = command("incrByFloat", key, increment);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotFloatException) {
+            throw (NotFloatException)ret;
+        }
+        return String.valueOf((Double)ret);
+    }
+
+    @Override public String[] mget(String ... keys) {
+        List<String> jret = (List<String>)command("mget", new Object[] { keys });
+        return jret.toArray(new String[0]);
+    }
+
+    @Override public String mset(String ... keysvalues) throws ArgException {
+        Object ret = command("mset", new Object[] { keysvalues });
+        if (ret instanceof ArgException) {
+            throw (ArgException)ret;
+        }
+        return (String)ret;
+    }
+
+    @Override public Boolean msetnx(String ... keysvalues) throws ArgException {
+        Object ret = command("msetnx", new Object[] { keysvalues });
+        if (ret instanceof ArgException) {
+            throw (ArgException)ret;
+        }
+        return (Long)ret == 1L;
     }
 
     @Override public String psetex(String key, long milliseconds, String value) {
@@ -216,6 +380,14 @@ public final class JedisIRedisClient extends AbstractRedisClient {
         if (nxxx != null && expx == null) {
             return (String)command("set", key, value, nxxx);
         }
+        if (nxxx == null && expx != null) {
+            if (expx.equals("ex")) {
+                return setex(key, (int)time, value);
+            }
+            else if (expx.equals("px")) {
+                return psetex(key, time, value);
+            }
+        }
         return (String)command("set", key, value, nxxx, expx, time);
     }
 
@@ -223,178 +395,345 @@ public final class JedisIRedisClient extends AbstractRedisClient {
         return (String)command("setex", key, seconds, value);
     }
 
-    @Override public Long setrange(String key, long offset, String value) {
-        return (Long)command("setrange", key, offset, value);
+    @Override public Long setnx(String key, String value) {
+        return (Long)command("setnx", key, value);
     }
 
-    @Override public Long strlen(String key) {
-        return (Long)command("strlen", key);
+    @Override public Long setrange(String key, long offset, String value) throws WrongTypeException {
+        Object ret = command("setrange", key, offset, value);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public String lindex(String key, long index) {
-        return (String)command("lindex", key, index);
+    @Override public Long strlen(String key) throws WrongTypeException {
+        Object ret = command("strlen", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long linsert(String key, String before_after, String pivot, String value) {
-        return (Long)command("linsert", key, LIST_POSITION.valueOf(before_after), pivot, value);
+    @Override public String lindex(String key, long index) throws WrongTypeException {
+        Object ret = command("lindex", key, index);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public Long llen(String key) {
-        return (Long)command("llen", key);
+    @Override public Long linsert(String key, String before_after, String pivot, String value) throws WrongTypeException {
+        LIST_POSITION lpos = null;
+        if (before_after.toLowerCase().equals("before")) {
+            lpos = LIST_POSITION.BEFORE;
+        }
+        if (before_after.toLowerCase().equals("after")) {
+            lpos = LIST_POSITION.AFTER;
+        }
+        Object ret = command("linsert", key, lpos, pivot, value);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public String lpop(String key) {
-        return (String)command("lpop", key);
+    @Override public Long llen(String key) throws WrongTypeException {
+        Object ret = command("llen", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long lpush(String key, String element, String ... elements) {
+    @Override public String lpop(String key) throws WrongTypeException {
+        Object ret = command("lpop", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
+    }
+
+    @Override public Long lpush(String key, String element, String ... elements) throws WrongTypeException {
         String[] strings = new String[1 + elements.length];
         strings[0] = element;
         for (int idx = 0; idx < elements.length; ++idx) {
             strings[idx + 1] = elements[idx];
         }
-        return (Long)command("lpush", key, strings);
+        Object ret = command("lpush", key, strings);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long lpushx(String key, String element) {
-        return (Long)command("lpushx", key, element);
+    @Override public Long lpushx(String key, String element) throws WrongTypeException {
+        Object ret = command("lpushx", key, new String[] { element });
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public List<String> lrange(String key, long start, long end) {
-        return (List<String>)command("lrange", key, start, end);
+    @Override public List<String> lrange(String key, long start, long end) throws WrongTypeException {
+        Object ret = command("lrange", key, start, end);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (List<String>)ret;
     }
 
-    @Override public Long lrem(String key, long count, String element) {
-        return (Long)command("lrem", key, count, element);
+    @Override public Long lrem(String key, long count, String element) throws WrongTypeException {
+        Object ret = command("lrem", key, count, element);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public String lset(String key, long index, String element) {
-        return (String)command("lset", key, index, element);
+    @Override public String lset(String key, long index, String element) throws WrongTypeException, NoKeyException, IndexOutOfRangeException {
+        Object ret = command("lset", key, index, element);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NoKeyException) {
+            throw (NoKeyException)ret;
+        }
+        if (ret instanceof IndexOutOfRangeException) {
+            throw (IndexOutOfRangeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public String ltrim(String key, long start, long end) {
-        return (String)command("ltrim", key, start, end);
+    @Override public String ltrim(String key, long start, long end) throws WrongTypeException {
+        Object ret = command("ltrim", key, start, end);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public String rpop(String key) {
-        return (String)command("rpop", key);
+    @Override public String rpop(String key) throws WrongTypeException {
+        Object ret = command("rpop", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public String rpoplpush(String source, String dest) {
-        return (String)command("rpoplpush", source, dest);
+    @Override public String rpoplpush(String source, String dest) throws WrongTypeException {
+        Object ret = command("rpoplpush", source, dest);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public Long rpush(String key, String element, String ... elements) {
+    @Override public Long rpush(String key, String element, String ... elements) throws WrongTypeException {
         String[] strings = new String[1 + elements.length];
         strings[0] = element;
         for (int idx = 0; idx < elements.length; ++idx) {
             strings[idx + 1] = elements[idx];
         }
-        return (Long)command("rpush", key, elements);
+        Object ret = command("rpush", key, strings);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long rpushx(String key, String element) {
-        return (Long)command("rpushx", key, element);
+    @Override public Long rpushx(String key, String element) throws WrongTypeException {
+        Object ret = command("rpushx", key, new String[] { element });
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long sadd(String key, String member, String ... members) {
+    @Override public Long sadd(String key, String member, String ... members) throws WrongTypeException {
         String[] ms = new String[1 + members.length];
         ms[0] = member;
         for (int idx = 0; idx < members.length; ++idx) {
             ms[idx + 1] = members[idx];
         }
-        return (Long)command("sadd", key, ms);
+        Object ret = command("sadd", key, ms);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long scard(String key) {
-        return (Long)command("scard", key);
+    @Override public Long scard(String key) throws WrongTypeException {
+        Object ret = command("scard", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Set<String> sdiff(String key, String ... keys) {
+    @Override public Set<String> sdiff(String key, String ... keys) throws WrongTypeException {
         String[] ks = new String[1 + keys.length];
         ks[0] = key;
         for (int idx = 0; idx < keys.length; ++idx) {
             ks[idx + 1] = keys[idx];
         }
-        return (Set<String>)command("sdiff", new Object[] { ks });
+        Object ret = command("sdiff", new Object[] { ks });
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Set<String>)ret;
     }
 
-    @Override public Long sdiffstore(String destination, String key, String ... keys) {
+    @Override public Long sdiffstore(String destination, String key, String ... keys) throws WrongTypeException {
         String[] ks = new String[1 + keys.length];
         ks[0] = key;
         for (int idx = 0; idx < keys.length; ++idx) {
             ks[idx + 1] = keys[idx];
         }
-        return (Long)command("sdiffstore", destination, ks);
+        Object ret = command("sdiffstore", destination, ks);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Set<String> sinter(String key, String ... keys) {
+    @Override public Set<String> sinter(String key, String ... keys) throws WrongTypeException {
         String[] ks = new String[1 + keys.length];
         ks[0] = key;
         for (int idx = 0; idx < keys.length; ++idx) {
             ks[idx + 1] = keys[idx];
         }
-        return (Set<String>)command("sinter", new Object[] { ks });
+        Object ret = command("sinter", new Object[] { ks });
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Set<String>)ret;
     }
 
-    @Override public Long sinterstore(String destination, String key, String ... keys) {
+    @Override public Long sinterstore(String destination, String key, String ... keys) throws WrongTypeException {
         String[] ks = new String[1 + keys.length];
         ks[0] = key;
         for (int idx = 0; idx < keys.length; ++idx) {
             ks[idx + 1] = keys[idx];
         }
-        return (Long)command("sinterstore", destination, ks);
+        Object ret = command("sinterstore", destination, ks);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Boolean sismember(String key, String member) {
-        return (Boolean)command("sismember", key, member);
+    @Override public Boolean sismember(String key, String member) throws WrongTypeException {
+        Object ret = command("sismember", key, member);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Boolean)ret;
     }
 
-    @Override public Set<String> smembers(String key) {
-        return (Set<String>)command("smembers", key);
+    @Override public Set<String> smembers(String key) throws WrongTypeException {
+        Object ret = command("smembers", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Set<String>)ret;
     }
 
-    @Override public Boolean smove(String source, String dest, String member) {
-        return (Long)command("smove", source, dest, member) == 1L;
+    @Override public Boolean smove(String source, String dest, String member) throws WrongTypeException {
+        Object ret = command("smove", source, dest, member);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Boolean)((Long)ret == 1L);
     }
 
-    @Override public String spop(String key) {
-        return (String)command("spop", key);
+    @Override public String spop(String key) throws WrongTypeException {
+        Object ret = command("spop", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public String srandmember(String key) {
-        return (String)command("srandmember", key);
+    @Override public String srandmember(String key) throws WrongTypeException {
+        Object ret = command("srandmember", key);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (String)ret;
     }
 
-    @Override public List<String> srandmember(String key, long count) {
-        return (List<String>)command("srandmember", key, (int)count);
+    @Override public List<String> srandmember(String key, long count) throws WrongTypeException {
+        Object ret = command("srandmember", key, (int)count);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (List<String>)ret;
     }
 
-    @Override public Long srem(String key, String member, String ... members) {
+    @Override public Long srem(String key, String member, String ... members) throws WrongTypeException {
         String[] ms = new String[1 + members.length];
         ms[0] = member;
         for (int idx = 0; idx < members.length; ++idx) {
             ms[idx + 1] = members[idx];
         }
-        return (Long)command("srem", key, ms);
+        Object ret = command("srem", key, ms);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Set<String> sunion(String key, String ... keys) {
+    @Override public Set<String> sunion(String key, String ... keys) throws WrongTypeException {
         String[] ks = new String[1 + keys.length];
         ks[0] = key;
         for (int idx = 0; idx < keys.length; ++idx) {
             ks[idx + 1] = keys[idx];
         }
-        return (Set<String>)command("sunion", new Object[] { ks });
+        Object ret = command("sunion", new Object[] { ks });
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Set<String>)ret;
     }
 
-    @Override public Long sunionstore(String destination, String key, String ... keys) {
+    @Override public Long sunionstore(String destination, String key, String ... keys) throws WrongTypeException {
         String[] ks = new String[1 + keys.length];
         ks[0] = key;
         for (int idx = 0; idx < keys.length; ++idx) {
             ks[idx + 1] = keys[idx];
         }
-        return (Long)command("sunionstore", destination, ks);
+        Object ret = command("sunionstore", destination, ks);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
+    }
+
+    @Override public ScanResult<Set<String>> sscan(String key, long cursor, String ... options) throws WrongTypeException {
+        Object ret = null;
+        redis.clients.jedis.ScanResult<String> scanResult;
+        if (options.length == 0) {
+            ret = command("sscan", key, String.valueOf(cursor));
+        }
+        else {
+            ScanParams params = new ScanParams();
+            for (int idx = 0; idx < options.length; ++idx) {
+                if (options[idx].equals("count")) {
+                    params.count(Integer.valueOf(options[idx + 1]));
+                }
+                else if (options[idx].equals("match")) {
+                    params.match(options[idx + 1]);
+                }
+            }
+            ret = command("sscan", key, String.valueOf(cursor), params);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        scanResult = (redis.clients.jedis.ScanResult<String>)ret;
+        Set<String> results = new HashSet<String>(scanResult.getResult());
+        return new ScanResult<Set<String>>(Long.valueOf(scanResult.getCursor()), results);
     }
 
     @Override public Long hdel(String key, String field, String ... fields) {

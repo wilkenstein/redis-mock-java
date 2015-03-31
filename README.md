@@ -72,8 +72,13 @@ $ mvn test
 
 ## Versions
 
+* 0.0.7
+  - Fix JedisIRedisClientAdapter bug with primitive data types, e.g., Longs vs longs.
+  - Implement more commands in JedisIRedisClientAdapter.
+  - Integration test JedisIRedisClientAdapter against redis.
+  - Bug fixes.
 * 0.0.6
-  - Fix multi bug with primitive data types, e.g., lset.
+  - Fix multi bug with primitive data types, e.g., Longs vs longs.
   - Lua scripting support started.
 * 0.0.5
   - All transaction commands implemented.

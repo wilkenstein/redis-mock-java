@@ -1091,6 +1091,9 @@ public final class RedisMock extends AbstractRedisMock {
                 }
             }
         }
+        if (idx >= scard(key)) {
+            idx = 0L;
+        }
         return new ScanResult<Set<String>>(idx, scanned);
     }
 

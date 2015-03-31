@@ -1,6 +1,7 @@
-package org.rarefiedredis.redis;
+package org.rarefiedredis.redis.adapter.jedis;
 
 import org.junit.Test;
+import org.junit.Before;
 import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 
@@ -9,11 +10,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
-public class RedisMockSetTest {
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
-    @Test public void saddShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+import org.rarefiedredis.redis.IRedisClient;
+import org.rarefiedredis.redis.RandomKey;
+import org.rarefiedredis.redis.ScanResult;
+import org.rarefiedredis.redis.ArgException;
+import org.rarefiedredis.redis.BitArgException;
+import org.rarefiedredis.redis.NotFloatException;
+import org.rarefiedredis.redis.WrongTypeException;
+import org.rarefiedredis.redis.NotIntegerException;
+import org.rarefiedredis.redis.SyntaxErrorException;
+import org.rarefiedredis.redis.NotImplementedException;
+
+public class JedisIRedisClientSetIT {
+
+    private JedisPool pool;
+    private IRedisClient redis;
+    private RandomKey rander;
+
+    @Before public void initPool() {
+        pool = new JedisPool(new JedisPoolConfig(), "localhost");
+        redis = new JedisIRedisClient(pool);
+        rander = new RandomKey();
+    }
+
+    @Test public void saddShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -28,9 +52,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void saddShouldAddANewSetMember() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void saddShouldAddANewSetMember() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v", v1 = "v1", v2 = "v2";
         assertEquals(1L, (long)redis.sadd(k, v));
         assertEquals("set", redis.type(k));
@@ -45,9 +68,8 @@ public class RedisMockSetTest {
         assertEquals(true, redis.sismember(k, v2));
     }
 
-    @Test public void scardShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void scardShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -62,16 +84,14 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void scardShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void scardShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         assertEquals(0L, (long)redis.scard(k));
     }
 
-    @Test public void scardShouldReturnTheSetCardinality() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void scardShouldReturnTheSetCardinality() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         assertEquals(0L, (long)redis.scard(k));
         redis.sadd(k, v1);
@@ -82,9 +102,8 @@ public class RedisMockSetTest {
         assertEquals(2L, (long)redis.scard(k));
     }
 
-    @Test public void sdiffShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sdiffShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -111,12 +130,11 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sdiffShouldDiffTwoSets() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "key1", k2 = "key2";
+    @Test public void sdiffShouldDiffTwoSets() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
-        redis.sadd(k1, v1, v3, v5);
-        redis.sadd(k2, v1, v2, v4);
+        assertEquals(3L, (long)redis.sadd(k1, v1, v3, v5));
+        assertEquals(3L, (long)redis.sadd(k2, v1, v2, v4));
         Set<String> diff = redis.sdiff(k1, k2);
         assertEquals(2, diff.size());
         assertEquals(true, diff.contains(v3));
@@ -127,9 +145,8 @@ public class RedisMockSetTest {
         assertEquals(true, diff.contains(v3));
     }
 
-    @Test public void sdiffShouldDiffNSets() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sdiffShouldDiffNSets() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         redis.sadd(k1, "a", "b", "c", "d");
         redis.sadd(k2, "c");
         redis.sadd(k3, "a", "c", "e");
@@ -139,9 +156,8 @@ public class RedisMockSetTest {
         assertEquals(true, diff.contains("d"));
     }
 
-    @Test public void sdiffstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k = "key", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sdiffstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String d = rander.randkey(), k = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -168,9 +184,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sdiffstoreShouldDiffTwoSetsAndStoreIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k1 = "k1", k2 = "k2";
+    @Test public void sdiffstoreShouldDiffTwoSetsAndStoreIt() throws WrongTypeException, NotImplementedException {
+        String d = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
         redis.sadd(k1, v1, v3, v5);
         redis.sadd(k2, v1, v2, v4);
@@ -187,9 +202,8 @@ public class RedisMockSetTest {
         assertEquals(true, members.contains(v3));
     }
 
-    @Test public void sdiffstoreShouldDiffNSetsAndStoreIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sdiffstoreShouldDiffNSetsAndStoreIt() throws WrongTypeException, NotImplementedException {
+        String d = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         redis.sadd(k1, "a", "b", "c", "d");
         redis.sadd(k2, "c");
         redis.sadd(k3, "a", "c", "e");
@@ -200,9 +214,8 @@ public class RedisMockSetTest {
         assertEquals(true, members.contains("d"));
     }
 
-    @Test public void sinterShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "k", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sinterShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         String v = "v";
         redis.set(k, v);
         try {
@@ -229,9 +242,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sinterShouldInterTwoSets() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2";
+    @Test public void sinterShouldInterTwoSets() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
         redis.sadd(k1, v1, v3, v5);
         redis.sadd(k2, v1, v2, v4);
@@ -245,9 +257,8 @@ public class RedisMockSetTest {
         assertEquals(true, inter.contains(v5));
     }
 
-    @Test public void sinterShouldInterNSets() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sinterShouldInterNSets() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         redis.sadd(k1, "a", "b", "c", "d");
         redis.sadd(k2, "c");
         redis.sadd(k3, "a", "c", "e");
@@ -256,9 +267,8 @@ public class RedisMockSetTest {
         assertEquals(true, inter.contains("c"));
     }
 
-    @Test public void sinterstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k = "k", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sinterstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String d = rander.randkey(), k = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         String v = "v";
         redis.set(k, v);
         try {
@@ -285,9 +295,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
     
-    @Test public void sinterstoreShouldInterTwoSetsAndStoreIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k1 = "k1", k2 = "k2";
+    @Test public void sinterstoreShouldInterTwoSetsAndStoreIt() throws WrongTypeException, NotImplementedException {
+        String d = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
         redis.sadd(k1, v1, v3, v5);
         redis.sadd(k2, v1, v2, v4);
@@ -302,9 +311,8 @@ public class RedisMockSetTest {
         assertEquals(true, inter.contains(v5));
     }
 
-    @Test public void sinterstoreShouldInterNSetsAndStoreIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sinterstoreShouldInterNSetsAndStoreIt() throws WrongTypeException, NotImplementedException {
+        String d = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         redis.sadd(k1, "a", "b", "c", "d");
         redis.sadd(k2, "c");
         redis.sadd(k3, "a", "c", "e");
@@ -314,9 +322,8 @@ public class RedisMockSetTest {
         assertEquals(true, inter.contains("c"));
     }
 
-    @Test public void sismemberShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "k";
+    @Test public void sismemberShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v";
         redis.set(k, v);
         try {
@@ -331,32 +338,28 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sismemberShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sismemberShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         assertEquals(false, redis.sismember(k, v));
     }
 
-    @Test public void sismemberShouldReturnZeroForMemberNotInSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sismemberShouldReturnZeroForMemberNotInSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v", v1 = "v1";
         redis.sadd(k, v);
         assertEquals(false, redis.sismember(k, v1));
     }
 
-    @Test public void sismemberShouldReturnOneForMemberInSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sismemberShouldReturnOneForMemberInSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.sadd(k, v);
         assertEquals(true, redis.sismember(k, v));
     }
 
-    @Test public void smembersShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void smembersShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -371,16 +374,14 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void smembersShouldReturnEmptySetIfKeyDoesNotExist() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void smembersShouldReturnEmptySetIfKeyDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         Set<String> members = redis.smembers(k);
         assertEquals(0, members.size());
     }
     
-    @Test public void smembersShouldReturnTheSetMembers() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void smembersShouldReturnTheSetMembers() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         redis.sadd(k, v1, v2, v3);
         Set<String> members = redis.smembers(k);
@@ -390,9 +391,8 @@ public class RedisMockSetTest {
         assertEquals(true, members.contains(v3));
     }
 
-    @Test public void smoveShouldThrowAnErrorIfSouceKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2";
+    @Test public void smoveShouldThrowAnErrorIfSouceKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v = "v";
         redis.set(k1, v);
         try {
@@ -407,9 +407,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void smoveShouldThrowAnErrorIfDestKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2";
+    @Test public void smoveShouldThrowAnErrorIfDestKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v = "v";
         redis.sadd(k1, v);
         redis.set(k2, v);
@@ -425,9 +424,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void smoveShouldDoNothingIfTheElementIsNotInTheSourceSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2";
+    @Test public void smoveShouldDoNothingIfTheElementIsNotInTheSourceSet() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2";
         redis.sadd(k1, v1);
         redis.sadd(k2, v2);
@@ -445,9 +443,8 @@ public class RedisMockSetTest {
         assertEquals(false, redis.sismember(k2, v1));
     }
 
-    @Test public void smoveShouldMoveTheElementFromSourceToDestination() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2";
+    @Test public void smoveShouldMoveTheElementFromSourceToDestination() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2";
         redis.sadd(k1, v1);
         assertEquals(true, redis.smove(k1, k2, v1));
@@ -465,9 +462,8 @@ public class RedisMockSetTest {
         assertEquals(false, redis.sismember(k2, v2));
     }
 
-    @Test public void spopShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void spopShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -480,16 +476,14 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void spopShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void spopShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v";
         assertEquals(null, redis.spop(k));
     }
 
-    @Test public void spopShouldRemoveARandomMemberFromTheSetAndReturnIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void spopShouldRemoveARandomMemberFromTheSetAndReturnIt() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         List<String> arr = new ArrayList<String>();
         arr.add(v1);
@@ -504,9 +498,8 @@ public class RedisMockSetTest {
         assertEquals(0L, (long)redis.scard(k));
     }
 
-    @Test public void srandmemberShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void srandmemberShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v";
         redis.set(k, v);
         try {
@@ -521,16 +514,14 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void srandmemberShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void srandmemberShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         assertEquals(null, redis.srandmember(k));
     }
 
-    @Test public void srandmemberShouldReturnARandomMemberFromTheSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void srandmemberShouldReturnARandomMemberFromTheSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         List<String> arr = new ArrayList<String>();
         arr.add(v1);
@@ -540,9 +531,8 @@ public class RedisMockSetTest {
         assertEquals(true, arr.contains(redis.srandmember(k)));
     }
 
-    @Test public void srandmemberShouldReturnCountRandomMembersFromTheSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void srandmemberShouldReturnCountRandomMembersFromTheSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         List<String> arr = new ArrayList<String>();
         arr.add(v1);
@@ -564,9 +554,8 @@ public class RedisMockSetTest {
         assertEquals(4, randos.size());
     }
      
-    @Test public void sremShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sremShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -581,33 +570,29 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sremShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sremShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         assertEquals(0L, (long)redis.srem(k, v));
     }
 
-    @Test public void sremShouldReturnZeroIfMemberIsNotInTheSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sremShouldReturnZeroIfMemberIsNotInTheSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v", v1 = "v1";
         redis.sadd(k, v);
         assertEquals(0L, (long)redis.srem(k, v1));
     }
 
-    @Test public void sremShouldReturnOneAndRemoveTheMemberFromTheSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sremShouldReturnOneAndRemoveTheMemberFromTheSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.sadd(k, v);
         assertEquals(1L, (long)redis.srem(k, v));
         assertEquals(0L, (long)redis.scard(k));
     }
 
-    @Test public void sremShouldReturnTheCountAndRemoveCountMembersFromTheSet() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sremShouldReturnTheCountAndRemoveCountMembersFromTheSet() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v = "v", v1 = "v1", v2 = "v2", v3 = "v3";
         redis.sadd(k, v, v1, v3);
         assertEquals(2L, (long)redis.srem(k, v1, v));
@@ -616,9 +601,8 @@ public class RedisMockSetTest {
         assertEquals(0L, (long)redis.scard(k));
     }
 
-    @Test public void sunionShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "k", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sunionShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         String v = "v";
         redis.set(k, v);
         try {
@@ -645,9 +629,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sunionShouldUnionTwoSets() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2";
+    @Test public void sunionShouldUnionTwoSets() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
         redis.sadd(k1, v1, v3, v5);
         redis.sadd(k2, v1, v2, v4);
@@ -668,9 +651,8 @@ public class RedisMockSetTest {
         assertEquals(true, union.contains(v5));
     }
 
-    @Test public void sunionShouldUnionNSets() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sunionShouldUnionNSets() throws WrongTypeException, NotImplementedException {
+        String k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         redis.sadd(k1, "a", "b", "c", "d");
         redis.sadd(k2, "c");
         redis.sadd(k3, "a", "c", "e");
@@ -683,9 +665,8 @@ public class RedisMockSetTest {
         assertEquals(true, union.contains("e"));
     }
 
-    @Test public void sunionstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k = "k", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sunionstoreShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String d = rander.randkey(), k = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         String v = "v";
         redis.set(k, v);
         try {
@@ -712,9 +693,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sunionstoreShouldUnionTwoSetsAndStoreIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k1 = "k1", k2 = "k2";
+    @Test public void sunionstoreShouldUnionTwoSetsAndStoreIt() throws WrongTypeException, NotImplementedException {
+        String d = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
         redis.sadd(k1, v1, v3, v5);
         redis.sadd(k2, v1, v2, v4);
@@ -737,9 +717,8 @@ public class RedisMockSetTest {
         assertEquals(true, union.contains(v5));
     }
 
-    @Test public void sunionstoreShouldUnionNSetsAndStoreIt() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3";
+    @Test public void sunionstoreShouldUnionNSetsAndStoreIt() throws WrongTypeException, NotImplementedException {
+        String d = rander.randkey(), k1 = rander.randkey(), k2 = rander.randkey(), k3 = rander.randkey();
         redis.sadd(k1, "a", "b", "c", "d");
         redis.sadd(k2, "c");
         redis.sadd(k3, "a", "c", "e");
@@ -753,9 +732,8 @@ public class RedisMockSetTest {
         assertEquals(true, union.contains("e"));
     }
 
-    @Test public void sscanShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sscanShouldThrowAnErrorIfKeyIsNotASet() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
+        String k = rander.randkey();
         String v = "value";
         redis.set(k, v);
         try {
@@ -770,9 +748,8 @@ public class RedisMockSetTest {
         assertEquals(false, true);
     }
 
-    @Test public void sscanShouldScanThrowASmallSetAndReturnEveryElement() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sscanShouldScanThrowASmallSetAndReturnEveryElement() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
         redis.sadd(k, v1, v2, v3, v4);
         ScanResult<Set<String>> scan = redis.sscan(k, 0L);
@@ -784,9 +761,8 @@ public class RedisMockSetTest {
         assertEquals(true, scan.results.contains(v4));
     }
 
-    @Test public void sscanShouldScanThroughALargeSetWithCursoring() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sscanShouldScanThroughALargeSetWithCursoring() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         Set<String> set = new HashSet<String>();
         for (int idx = 0; idx < 62; ++idx) {
             set.add(String.valueOf(idx));
@@ -811,9 +787,8 @@ public class RedisMockSetTest {
         }
     }
 
-    @Test public void sscanShouldScanThroughALargeSetWithCursoringAndACount() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sscanShouldScanThroughALargeSetWithCursoringAndACount() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         Set<String> set = new HashSet<String>();
         for (int idx = 0; idx < 62; ++idx) {
             set.add(String.valueOf(idx));
@@ -839,9 +814,8 @@ public class RedisMockSetTest {
         }
     }
 
-    @Test public void sscanShouldScanThroughALargeSetWithCursoringAndAMatch() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sscanShouldScanThroughALargeSetWithCursoringAndAMatch() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         Set<String> set = new HashSet<String>();
         for (int idx = 0; idx < 62; ++idx) {
             set.add(String.valueOf(idx));
@@ -867,9 +841,8 @@ public class RedisMockSetTest {
         }
     }
 
-    @Test public void sscanShouldScanThroughALargeSetWithCursoringACountAndAMatch() throws WrongTypeException {
-        RedisMock redis = new RedisMock();
-        String k = "key";
+    @Test public void sscanShouldScanThroughALargeSetWithCursoringACountAndAMatch() throws WrongTypeException, NotImplementedException {
+        String k = rander.randkey();
         Set<String> set = new HashSet<String>();
         for (int idx = 0; idx < 62; ++idx) {
             set.add(String.valueOf(idx));
