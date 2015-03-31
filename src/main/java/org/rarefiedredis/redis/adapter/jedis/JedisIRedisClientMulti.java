@@ -1,16 +1,18 @@
 package org.rarefiedredis.redis.adapter.jedis;
 
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Tuple;
 import redis.clients.jedis.BitOP;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
-import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 import org.rarefiedredis.redis.IRedisClient;
 import org.rarefiedredis.redis.AbstractRedisClient;
 import org.rarefiedredis.redis.NotImplementedException;
+import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.ArgException;
 import org.rarefiedredis.redis.WrongTypeException;
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
@@ -26,24 +28,78 @@ import java.lang.reflect.InvocationTargetException;
 
 public final class JedisIRedisClientMulti extends AbstractRedisClient {
 
+    private JedisPool pool;
+    private Jedis jedis;
     private Transaction transaction;
     private Response lastResponse;
+    private JedisIRedisClient parent;
 
-    public JedisIRedisClientMulti(Jedis jedis) {
-        this.transaction = jedis.multi();
+    public JedisIRedisClientMulti(JedisPool pool, JedisIRedisClient parent) {
+        this.pool = pool;
+        this.jedis = null;
+        this.parent = parent;
+        initialize();
+    }
+
+    public JedisIRedisClientMulti(Jedis jedis, JedisIRedisClient parent) {
+        this.pool = null;
+        this.jedis = jedis;
+        this.parent = parent;
+        initialize();
+    }
+
+    private void initialize() {
+        Jedis jedis = null;
+        try {
+            if (this.jedis != null) {
+                jedis = this.jedis;
+            }
+            else {
+                jedis = pool.getResource();
+            }
+            transaction = jedis.multi();
+        }
+        catch (Exception e) {
+            transaction = null;
+            if (jedis != null) {
+                jedis.close();
+            }
+        }
     }
 
     private Object command(String name, Object ... args) {
-        try {
-            lastResponse = (Response)transaction.getClass().getDeclaredMethod(name).invoke(transaction, args);
-        }
-        catch (NoSuchMethodException nsme) {
-        }
-        catch (IllegalAccessException iae) {
-        }
-        catch (InvocationTargetException ite) {
-            // TODO: Throw exception instead?
+        if (transaction == null) {
             return null;
+        }
+        try {
+            Class<?>[] parameterTypes = new Class<?>[args.length];
+            for (int idx = 0; idx < args.length; ++idx) {
+                if (args[idx] != null) {
+                    parameterTypes[idx] = args[idx].getClass();
+                    // Convert Object classes into primitive data type classes where appropriate.
+                    // TODO: This sucks, but I don't have a better way right now
+                    if (parameterTypes[idx].equals(Integer.class)) {
+                        parameterTypes[idx] = int.class;
+                    }
+                    if (parameterTypes[idx].equals(Long.class)) {
+                        parameterTypes[idx] = long.class;
+                    }
+                    if (parameterTypes[idx].equals(Double.class)) {
+                        parameterTypes[idx] = double.class;
+                    }
+                }
+            }
+            lastResponse = (Response)
+                transaction
+                .getClass()
+                .getDeclaredMethod(name, parameterTypes)
+                .invoke(transaction, args);
+        }
+        catch (NoSuchMethodException e) {
+        }
+        catch (IllegalAccessException e) {
+        }
+        catch (InvocationTargetException e) {
         }
         return null;
     }
@@ -165,7 +221,7 @@ public final class JedisIRedisClientMulti extends AbstractRedisClient {
     }
 
     @Override public Boolean msetnx(String ... keysvalues) {
-        return (Long)command("msetnx", keysvalues) == 1L;
+        return (Long)command("msetnx", new Object[] { keysvalues }) == 1L;
     }
 
     @Override public String psetex(String key, long milliseconds, String value) {
@@ -197,6 +253,14 @@ public final class JedisIRedisClientMulti extends AbstractRedisClient {
         }
         if (nxxx != null && expx == null) {
             return (String)command("set", key, value, nxxx);
+        }
+        if (nxxx == null && expx != null) {
+            if (expx.equals("ex")) {
+                return setex(key, (int)time, value);
+            }
+            else if (expx.equals("px")) {
+                return psetex(key, time, value);
+            }
         }
         return (String)command("set", key, value, nxxx, expx, time);
     }
@@ -272,7 +336,7 @@ public final class JedisIRedisClientMulti extends AbstractRedisClient {
         for (int idx = 0; idx < elements.length; ++idx) {
             strings[idx + 1] = elements[idx];
         }
-        return (Long)command("rpush", key, elements);
+        return (Long)command("rpush", key, strings);
     }
 
     @Override public Long rpushx(String key, String element) {
@@ -439,11 +503,12 @@ public final class JedisIRedisClientMulti extends AbstractRedisClient {
         return (String)command("hmset", key, hash);
     }
 
-    @Override public Boolean hset(String key, String field, String value) {
-        return (Long)command("hset", key, field, value) == 1L;
+    @Override public Boolean hset(final String key, final String field, final String value) {
+        command("hset", key, field, value);
+        return null;
     }
 
-    @Override public Boolean hsetnx(String key, String field, String value) {
+    @Override public Boolean hsetnx(final String key, final String field, final String value) {
         return (Long)command("hsetnx", key, field, value) == 1L;
     }
 
@@ -456,11 +521,24 @@ public final class JedisIRedisClientMulti extends AbstractRedisClient {
     }
 
     @Override public String discard() {
-        return transaction.discard();
+        String reply = transaction.discard();
+        transaction = null;
+        return reply;
     }
 
-    @Override public List<Object> exec() {
-        return transaction.exec();
+    @Override public List<Object> exec() throws ExecWithoutMultiException {
+        if (transaction == null) {
+            throw new ExecWithoutMultiException();
+        }
+        try {
+            List<Object> ret = transaction.exec();
+            parent.execd();
+            return ret;
+        }
+        catch (JedisDataException e) {
+            parent.execd();
+            return null;
+        }
     }
 
     @Override public IRedisClient multi() {

@@ -7,7 +7,6 @@ import redis.clients.jedis.BitOP;
 import redis.clients.jedis.BitPosParams;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
-import redis.clients.jedis.exceptions.JedisException;
 
 import org.rarefiedredis.redis.IRedisClient;
 import org.rarefiedredis.redis.AbstractRedisClient;
@@ -38,16 +37,31 @@ import java.lang.reflect.InvocationTargetException;
 public final class JedisIRedisClient extends AbstractRedisClient {
 
     private JedisPool pool;
+    private Jedis jedis;
 
     public JedisIRedisClient(JedisPool pool) {
         this.pool = pool;
+        this.jedis = null;
+    }
+
+    public JedisIRedisClient(Jedis jedis) {
+        this.pool = null;
+        this.jedis = jedis;
     }
 
     private Object command(String name, Object ... args) {
         Jedis jedis = null;
         Object ret = null;
         try {
-            jedis = pool.getResource();
+            if (this.jedis != null) {
+                jedis = this.jedis;
+            }
+            else {
+                jedis = pool.getResource();
+            }
+            if (jedis == null) {
+                return null;
+            }
             Class<?>[] parameterTypes = new Class<?>[args.length];
             for (int idx = 0; idx < args.length; ++idx) {
                 if (args[idx] != null) {
@@ -71,13 +85,10 @@ public final class JedisIRedisClient extends AbstractRedisClient {
                 .invoke(jedis, args);
         }
         catch (NoSuchMethodException e) {
-            // TODO: Throw exception instead?
             ret = null;
-            e.printStackTrace();
         }
         catch (IllegalAccessException e) {
             ret = null;
-            e.printStackTrace();
         }
         catch (InvocationTargetException e) {
             ret = null;
@@ -103,10 +114,9 @@ public final class JedisIRedisClient extends AbstractRedisClient {
             else if (msg.contains("wrong number of arguments")) {
                 ret = new ArgException(e.getCause());
             }
-            // TODO: Interpret je and throw the right exception.
         }
         finally {
-            if (jedis != null) {
+            if (this.jedis == null) {
                 jedis.close();
             }
         }
@@ -820,13 +830,19 @@ public final class JedisIRedisClient extends AbstractRedisClient {
         throw new ExecWithoutMultiException();
     }
 
+    public void execd() {
+        // Switch back to using the pool if a multi execd
+        // and we were watching a key.
+        if (pool != null && jedis != null) {
+            jedis = null;
+        }
+    }
+
     @Override public IRedisClient multi() {
-        try {
-            return new JedisIRedisClientMulti(pool.getResource());
+        if (jedis != null) {
+            return new JedisIRedisClientMulti(jedis, this);
         }
-        catch (Exception e) {
-            return null;
-        }
+        return new JedisIRedisClientMulti(pool, this);
     }
 
     @Override public String unwatch() {
@@ -834,7 +850,22 @@ public final class JedisIRedisClient extends AbstractRedisClient {
     }
 
     @Override public String watch(String key) {
-        return (String)command("watch", key);
+        String[] keys = new String[1];
+        keys[0] = key;
+        // Are we using a pool? If so, we have to go to a single client
+        // to enable watch semantics.
+        if (pool != null && jedis == null) {
+            try {
+                jedis = pool.getResource();
+            }
+            catch (Exception e) {
+                if (jedis != null) {
+                    jedis.close();
+                    jedis = null;
+                }
+            }
+        }
+        return (String)command("watch", new Object[] { keys });
     }
 
     @Override public Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) {
