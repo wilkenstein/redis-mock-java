@@ -262,6 +262,30 @@ public class JedisIRedisClientTransactionIT {
         assertEquals(false, true);
     }
 
+    @Test public void multiShouldSmove() {
+        String k = rander.randkey(), d = rander.randkey();
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
+        try {
+            redis.sadd(k, v1, v2, v3, v4);
+            IRedisClient multi = redis.multi();
+            multi.smove(k, d, v2);
+            multi.smove(k, d, v1);
+            multi.smove(k, d, "v");
+            List<Object> replies = multi.exec();
+            assertEquals(3, replies.size());
+            assertEquals(true, redis.sismember(d, v1));
+            assertEquals(true, redis.sismember(d, v2));
+            assertEquals(false, redis.sismember(d, "v"));
+            assertEquals(false, redis.sismember(k, v1));
+            assertEquals(false, redis.sismember(k, v2));
+            assertEquals(2L, (long)redis.scard(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(true, false);
+    }
+
     @Ignore("pending") @Test public void multiShouldBeAbleToExecuteEveryCommand() {
     }
 

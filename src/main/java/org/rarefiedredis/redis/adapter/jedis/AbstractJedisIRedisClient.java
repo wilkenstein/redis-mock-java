@@ -584,6 +584,9 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
 
     @Override public Boolean smove(String source, String dest, String member) throws WrongTypeException {
         Object ret = command("smove", source, dest, member);
+        if (ret == null) {
+            return null;
+        }
         if (ret instanceof WrongTypeException) {
             throw (WrongTypeException)ret;
         }
