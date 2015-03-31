@@ -1197,10 +1197,13 @@ public final class RedisMock extends AbstractRedisMock {
 
     @Override public synchronized List<String> hmget(String key, String field, String ... fields) throws WrongTypeException {
         checkType(key, "hash");
-        if (!exists(key)) {
-            return new ArrayList<String>();
-        }
         List<String> lst = new ArrayList<String>(1 + fields.length);
+        if (!exists(key)) {
+            for (int idx = 0; idx < 1 + fields.length; ++idx) {
+                lst.add(null);
+            }
+            return lst;
+        }
         lst.add(hget(key, field));
         for (String f : fields) {
             lst.add(hget(key, f));
