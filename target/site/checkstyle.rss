@@ -25,8 +25,8 @@ under the License.
     <language>en-us</language>
     <copyright>&#169;2015</copyright>
     <item>
-      <title>File: 40,
-             Errors: 3150,
+      <title>File: 41,
+             Errors: 2967,
              Warnings: 0,
              Infos: 0
       </title>
@@ -172,6 +172,20 @@ under the License.
               </tr>
                           <tr>
                 <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.adapter.jedis.AbstractJedisIRedisClient.java">org/rarefiedredis/redis/adapter/jedis/AbstractJedisIRedisClient.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  435
+                </td>
+              </tr>
+                          <tr>
+                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.AbstractRedisClient.java">org/rarefiedredis/redis/AbstractRedisClient.java</a>
                 </td>
                 <td>
@@ -279,7 +293,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  296
+                  46
                 </td>
               </tr>
                           <tr>
@@ -587,7 +601,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  417
+                  49
                 </td>
               </tr>
                           <tr>
