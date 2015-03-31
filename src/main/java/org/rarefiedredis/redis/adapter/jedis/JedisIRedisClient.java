@@ -116,7 +116,7 @@ public final class JedisIRedisClient extends AbstractRedisClient {
             }
         }
         finally {
-            if (this.jedis == null) {
+            if (this.jedis == null && jedis != null) {
                 jedis.close();
             }
         }
