@@ -72,6 +72,11 @@ $ mvn test
 
 ## Versions
 
+* 0.0.8
+  - Implement transaction commands in JedisIRedisClientAdapter.
+  - Unit-test transaction commands in JedisIRedisClientAdater.
+  - Implement hash commands in JedisIRedisClientAdapter.
+  - Unit-test hash commands in JedisIRedisClientAdater.
 * 0.0.7
   - Fix JedisIRedisClientAdapter bug with primitive data types, e.g., Longs vs longs.
   - Implement more commands in JedisIRedisClientAdapter.
