@@ -5,6 +5,7 @@ import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class RedisMockTransactionTest {
 
@@ -234,6 +235,29 @@ public class RedisMockTransactionTest {
             multi.exec();
             assertEquals(3L, (long)redis.llen(k));
             assertEquals(v3, redis.lindex(k, 1L));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void multiShouldDoLpushAndLtrim() {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        List<String> vs = new ArrayList<String>(11);
+        for (int i = 0; i < 11; ++i) {
+            vs.add(String.valueOf(i));
+        }
+        try {
+            IRedisClient multi = redis.multi();
+            for (String v : vs) {
+                multi.lpush(k, v);
+                multi.ltrim(k, -10L, -1L);
+            }
+            multi.exec();
+            assertEquals(10L, (long)redis.llen(k));
+            assertEquals("9", redis.lindex(k, 0L));
             return;
         }
         catch (Exception e) {

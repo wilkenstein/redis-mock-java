@@ -1,6 +1,7 @@
 package org.rarefiedredis.redis;
 
 import org.junit.Test;
+import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
@@ -53,7 +54,7 @@ public class LuaScripterTest {
         }
     }
 
-    @Test public void executeShouldExecuteRedisFunctionsInALuaScript() {
+    @Ignore("pending") @Test public void executeShouldExecuteRedisFunctionsInALuaScript() {
         IRedis redis = new RedisMock();
         LuaScripter lua = new LuaScripter(redis);
         List<String> keys = new ArrayList<String>(1);

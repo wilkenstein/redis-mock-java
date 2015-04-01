@@ -74,7 +74,6 @@ public final class RedisMockMulti extends AbstractRedisMock {
                     returns.add(ret);
                 }
                 catch (Exception e) {
-                    e.printStackTrace();
                     returns.add(e);
                 }
             }
