@@ -72,6 +72,9 @@ $ mvn test
 
 ## Versions
 
+* 0.0.10
+  - Preliminary unit-tests on lua scripting.
+  - Fix ConcurrentModificationException bug in ltrim.
 * 0.0.9
   - Hotfix for NullPointerException in smove in AbstractJedisIRedisClientAdapter.
 * 0.0.8
