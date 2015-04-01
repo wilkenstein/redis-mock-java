@@ -21,7 +21,7 @@ public class LuaScripterTest {
         factorial.append("return fact(4)\n");
         List<Object> lst = lua.execute(factorial.toString());
         assertEquals(1, lst.size());
-        assertEquals(4*3*2*1L, (long)((Long)lst.get(0)));
+        assertEquals(4*3*2*1, lst.get(0));
     }
 
     @Test public void executeShouldExecuteALuaScriptWithKeysAndArgs() {
@@ -51,6 +51,16 @@ public class LuaScripterTest {
                 assertEquals(args.get(1), v);
             }
         }
+    }
+
+    @Test public void executeShouldExecuteRedisFunctionsInALuaScript() {
+        IRedis redis = new RedisMock();
+        LuaScripter lua = new LuaScripter(redis);
+        List<String> keys = new ArrayList<String>(1);
+        keys.add("foo");
+        List<Object> lst = lua.execute("return redis.call('set', KEYS[1], 'bar')", keys);
+        assertEquals(1, lst.size());
+        assertEquals("OK", (String)lst.get(0));
     }
 
 }

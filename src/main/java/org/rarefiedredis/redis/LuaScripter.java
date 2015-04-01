@@ -9,10 +9,19 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
 
+import javax.script.Bindings;
+import javax.script.SimpleBindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
 public final class LuaScripter {
 
     private IRedis redis;
     private StringBuilder redisBindSB;
+    private ScriptEngine scriptEngine;
 
     public LuaScripter() {
         this(new RedisMock());
@@ -21,12 +30,19 @@ public final class LuaScripter {
     public LuaScripter(IRedis redis) {
         this.redis = redis;
         this.redisBindSB = new StringBuilder("redis = {}\n");
-        this.redisBindSB.append("function redis:call(command, ...)\n");
-        // TODO: ?
+        this.redisBindSB.append("redisObj = redisObj or {}\n");
+        this.redisBindSB.append("function redis.call(command, ...)\n");
+        this.redisBindSB.append("  local args = table.pack(...)\n");
+        this.redisBindSB.append("  if command == 'set' then\n");
+        this.redisBindSB.append("    print(args.n)\n");
+        this.redisBindSB.append("    return redisObj:set(...)\n");
+        this.redisBindSB.append("  end\n");
         this.redisBindSB.append("end\n");
-        this.redisBindSB.append("function redis:pcall(command, ...)\n");
-        // TODO: ?
+        this.redisBindSB.append("function redis.pcall(...)\n");
+        this.redisBindSB.append("  return pcall(redis.call(...))\n");
         this.redisBindSB.append("end\n");
+        ScriptEngineManager mgr = new ScriptEngineManager();
+        this.scriptEngine = mgr.getEngineByName("lua");
     }
 
     private List<Object> asList(Varargs args) {
@@ -133,8 +149,11 @@ public final class LuaScripter {
        return execute(script, new LinkedList<String>(), new LinkedList<String>());
     }
 
+    public List<Object> execute(String script, List<String> keys) {
+        return execute(script, keys, new LinkedList<String>());
+    }
+
     public List<Object> execute(String script, List<String> keys, List<String> args) {
-        Globals globals = JsePlatform.standardGlobals();
         StringBuilder scriptSB = new StringBuilder(redisBindSB);
         if (!keys.isEmpty()) {
             scriptSB.append("KEYS = {");
@@ -159,9 +178,22 @@ public final class LuaScripter {
             scriptSB.append("\"}\n");
         }
         scriptSB.append(script);
-        LuaValue chunk = globals.load(scriptSB.toString());
-        Varargs ret = chunk.invoke();
-        return asList(ret);
+        try {
+            CompiledScript luaScript = ((Compilable)scriptEngine).compile(scriptSB.toString());
+            Bindings sb = new SimpleBindings();
+            LuaValue luaRedis = CoerceJavaToLua.coerce(redis);
+            sb.put("redisObj", luaRedis);
+            Object ret = luaScript.eval(sb);
+            if (ret instanceof Varargs) {
+                return asList((Varargs)ret);
+            }
+            List<Object> wrapper = new LinkedList<Object>();
+            wrapper.add(ret);
+            return wrapper;
+        }
+        catch (ScriptException e) {
+            return null;
+        }
     }
 
 }
