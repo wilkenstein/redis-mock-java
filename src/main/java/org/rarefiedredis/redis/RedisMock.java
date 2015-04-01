@@ -823,7 +823,12 @@ public final class RedisMock extends AbstractRedisMock {
         if (start < 0 || end < 0) {
             return "OK";
         }
-        List<String> trimmed = listCache.get(key).subList((int)start, (int)(end + 1L));
+        List<String> subl = listCache.get(key).subList((int)start, (int)(end + 1L));
+        // Avoid a ConcurrentModificationException on the subList view by copying it into a new list.
+        List<String> trimmed = new LinkedList<String>();
+        for (String sub : subl) {
+            trimmed.add(sub);
+        }
         listCache.get(key).retainAll(trimmed);
         keyModified(key);
         return "OK";
