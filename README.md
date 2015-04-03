@@ -72,6 +72,10 @@ $ mvn test
 
 ## Versions
 
+* 0.0.13
+  - Attempt to fix a deadlock condition in JedisIRedisClient & Multi.
+* 0.0.12
+* 0.0.11
 * 0.0.10
   - Preliminary unit-tests on lua scripting.
   - Fix ConcurrentModificationException bug in ltrim.
