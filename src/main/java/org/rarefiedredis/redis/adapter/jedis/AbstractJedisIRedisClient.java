@@ -54,6 +54,14 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
         return (Boolean)command("exists", key);
     }
 
+    @Override public Boolean expire(String key, int seconds) {
+        Object ret = command("expire", key, seconds);
+        if (ret == null) {
+            return null;
+        }
+        return (Long)ret == 1L;
+    }
+
     @Override public Boolean expireat(final String key, final long timestamp) {
         Object ret = command("expireat", key, timestamp);
         if (ret == null) {
@@ -71,11 +79,19 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
         if (ret == null) {
             return null;
         }
-        return (Long)ret == 1L ? true : false;
+        return (Long)ret == 1L;
+    }
+
+    @Override public Boolean pexpire(final String key, final long milliseconds) {
+        Object ret = command("pexpire", key, milliseconds);
+        if (ret == null) {
+            return null;
+        }
+        return (Long)ret == 1L;
     }
 
     @Override public Boolean pexpireat(final String key, final long timestamp) {
-        Object ret = command("pexpireat", key, timestamp);
+        Object ret = command("pexpireAt", key, timestamp);
         if (ret == null) {
             return null;
         }
