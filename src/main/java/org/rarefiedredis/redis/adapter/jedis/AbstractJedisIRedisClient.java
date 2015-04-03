@@ -6,6 +6,7 @@ import redis.clients.jedis.Tuple;
 import redis.clients.jedis.BitOP;
 import redis.clients.jedis.BitPosParams;
 import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.Tuple;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
 
 import org.rarefiedredis.redis.IRedisClient;
@@ -26,6 +27,7 @@ import org.rarefiedredis.redis.IndexOutOfRangeException;
 import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.DiscardWithoutMultiException;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -893,8 +895,144 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
         return String.valueOf((Double)command("zincrby", key, increment, member));
     }
 
+    @Override public Long zinterstore(String destination, int numkeys, String ... options) {
+        String[] sets = new String[numkeys];
+        for (int i = 0; i < numkeys; ++i) {
+            sets[i] = options[i];
+        }
+        return (Long)command("zinterstore", destination, sets);
+    }
+
     @Override public Long zlexcount(String key, String min, String max) {
         return (Long)command("zlexcount", key, min, max);
+    }
+
+    private Set<ZsetPair> toZsetPairSet(Set<String> range) {
+        if (range == null) {
+            return null;
+        }
+        Set<ZsetPair> zrange = new HashSet<ZsetPair>();
+        for (String element : range) {
+            zrange.add(new ZsetPair(element, null));
+        }
+        return zrange;
+    }
+
+    private Set<ZsetPair> toZsetPairSetFromTupleSet(Collection<Tuple> range) {
+        if (range == null) {
+            return null;
+        }
+        Set<ZsetPair> zrange = new HashSet<ZsetPair>();
+        for (Tuple tuple : range) {
+            zrange.add(new ZsetPair(tuple.getElement(), tuple.getScore()));
+        }
+        return zrange;
+    }
+
+    @Override public Set<ZsetPair> zrange(String key, long start, long stop, String ... options) {
+        boolean withscores = false;
+        for (int i = 0; i < options.length; ++i) {
+            if (options[i].equals("withscores")) {
+                withscores = true;
+            }
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrangeWithScores", key, start, stop));
+        }
+        return toZsetPairSet((Set<String>)command("zrange", key, start, stop));
+    }
+
+    @Override public Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) {
+        boolean withscores = false;
+        for (int i = 0; i < options.length; ++i) {
+            if (options[i].equals("withscores")) {
+                withscores = true;
+            }
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrevrangeWithScores", key, start, stop));
+        }
+        return toZsetPairSet((Set<String>)command("zrevrange", key, start, stop));
+    }
+
+    @Override public Set<ZsetPair> zrangebylex(final String key, final String min, final String max, final String ... options) {
+        Integer offset = null;
+        Integer count = null;
+        for (int i = 0; i < options.length; ++i) {
+            if (options[i].equals(offset)) {
+                try {
+                    offset = Integer.valueOf(options[i + 1]);
+                }
+                catch (Exception e) {
+                    offset = null;
+                }
+            }
+            if (options[i].equals(count)) {
+                try {
+                    count = Integer.valueOf(options[i + 1]);
+                }
+                catch (Exception e) {
+                    count = null;
+                }
+            }
+        }
+        if (offset != null && count != null) {
+            return toZsetPairSet((Set<String>)command("zrangeByLex", key, min, max, offset, count));
+        }
+            return toZsetPairSet((Set<String>)command("zrangeByLex", key, min, max));
+    }
+
+    @Override public Set<ZsetPair> zrevrangebylex(final String key, final String max, final String min, final String ... options) {
+        Integer offset = null;
+        Integer count = null;
+        for (int i = 0; i < options.length; ++i) {
+            if (options[i].equals(offset)) {
+                try {
+                    offset = Integer.valueOf(options[i + 1]);
+                }
+                catch (Exception e) {
+                    offset = null;
+                }
+            }
+            if (options[i].equals(count)) {
+                try {
+                    count = Integer.valueOf(options[i + 1]);
+                }
+                catch (Exception e) {
+                    count = null;
+                }
+            }
+        }
+        if (offset != null && count != null) {
+            return toZsetPairSet((Set<String>)command("zrevrangeByLex", key, max, min, offset, count));
+        }
+            return toZsetPairSet((Set<String>)command("zrevrangeByLex", key, max, min));
+    }
+
+    @Override public Set<ZsetPair> zrangebyscore(final String key, final String min, final String max, final String ... options) {
+        boolean withscores = false;
+        for (int i = 0; i < options.length; ++i) {
+            if (options[i].equals("withscores")) {
+                withscores = true;
+            }
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrangeByScoreWithScores", key, min, max));
+        }
+        return toZsetPairSet((Set<String>)command("zrangeByScore", key, min, max));
+    }
+
+    @Override public Set<ZsetPair> zrevrangebyscore(final String key, final String max, final String min, final String ... options) {
+        boolean withscores = false;
+        for (int i = 0; i < options.length; ++i) {
+            if (options[i].equals("withscores")) {
+                withscores = true;
+            }
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrevrangeByScoreWithScores", key, max, min));
+        }
+        return toZsetPairSet((Set<String>)command("zrevrangeByScore", key, max, min));
     }
 
     @Override public Long zrank(String key, String member) {
@@ -928,6 +1066,40 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
 
     @Override public Double zscore(String key, String member) {
         return (Double)command("zscore", key, member);
+    }
+
+    @Override public Long zunionstore(String destination, int numkeys, String ... options) {
+        String[] sets = new String[numkeys];
+        for (int i = 0; i < numkeys; ++i) {
+            sets[i] = options[i];
+        }
+        return (Long)command("zunionstore", destination, sets);
+    }
+
+    @Override public ScanResult<Set<ZsetPair>> zscan(final String key, final long cursor, final String ... options) throws WrongTypeException {
+        Object ret = null;
+        redis.clients.jedis.ScanResult<Tuple> scanResult;
+        if (options.length == 0) {
+            ret = command("zscan", key, String.valueOf(cursor));
+        }
+        else {
+            ScanParams params = new ScanParams();
+            for (int idx = 0; idx < options.length; ++idx) {
+                if (options[idx].equals("count")) {
+                    params.count(Integer.valueOf(options[idx + 1]));
+                }
+                else if (options[idx].equals("match")) {
+                    params.match(options[idx + 1]);
+                }
+            }
+            ret = command("zscan", key, String.valueOf(cursor), params);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        scanResult = (redis.clients.jedis.ScanResult<Tuple>)ret;
+        Set<ZsetPair> results = toZsetPairSetFromTupleSet(scanResult.getResult());
+        return new ScanResult<Set<ZsetPair>>(Long.valueOf(scanResult.getCursor()), results);
     }
 
 }

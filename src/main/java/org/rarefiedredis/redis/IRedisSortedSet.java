@@ -25,6 +25,11 @@ public interface IRedisSortedSet {
             this.score = score;
         }
 
+        public ZsetPair(Double score, String member) {
+            this.member = member;
+            this.score = score;
+        }
+
         public static Set<String> members(Set<ZsetPair> pairs) {
             Set<String> set = new HashSet<String>();
             for (ZsetPair pair : pairs) {
@@ -75,6 +80,6 @@ public interface IRedisSortedSet {
 
     Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException;
 
-    ScanResult<Set<ZsetPair>> zscan(String key, Long cursor, String ... options) throws WrongTypeException, NotImplementedException;
+    ScanResult<Set<ZsetPair>> zscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException;
 
 }

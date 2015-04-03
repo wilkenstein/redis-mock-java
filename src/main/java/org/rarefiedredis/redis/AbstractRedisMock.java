@@ -485,7 +485,7 @@ public abstract class AbstractRedisMock implements IRedis {
         throw new NotImplementedException();
     }
 
-    @Override public ScanResult<Set<ZsetPair>> zscan(String key, Long cursor, String ... options) throws WrongTypeException, NotImplementedException{
+    @Override public ScanResult<Set<ZsetPair>> zscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }
 
