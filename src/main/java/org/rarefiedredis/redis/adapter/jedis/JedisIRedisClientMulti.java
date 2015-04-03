@@ -31,7 +31,6 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
     private JedisPool pool;
     private Jedis jedis;
     private Transaction transaction;
-    private Response lastResponse;
     private JedisIRedisClient parent;
 
     public JedisIRedisClientMulti(JedisPool pool, JedisIRedisClient parent) {
@@ -61,16 +60,14 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
         }
         catch (Exception e) {
             transaction = null;
-            if (jedis != null) {
+            if (pool != null && jedis != null) {
                 jedis.close();
             }
+            parent.execd();
         }
     }
 
-    @Override public synchronized Object command(String name, Object ... args) {
-        if (transaction == null) {
-            return null;
-        }
+    @Override public Object command(String name, Object ... args) {
         try {
             Class<?>[] parameterTypes = new Class<?>[args.length];
             for (int idx = 0; idx < args.length; ++idx) {
@@ -89,11 +86,14 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
                     }
                 }
             }
-            lastResponse = (Response)
-                transaction
-                .getClass()
-                .getDeclaredMethod(name, parameterTypes)
-                .invoke(transaction, args);
+            synchronized (this) {
+                if (transaction != null) {
+                    transaction
+                        .getClass()
+                        .getDeclaredMethod(name, parameterTypes)
+                        .invoke(transaction, args);
+                }
+            }
         }
         catch (NoSuchMethodException e) {
         }
@@ -104,29 +104,31 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
         return null;
     }
 
-    public Response getLastResponse() {
-        return lastResponse;
-    }
-
     @Override public synchronized String discard() {
         String reply = transaction.discard();
         transaction = null;
         return reply;
     }
 
-    @Override public synchronized List<Object> exec() throws ExecWithoutMultiException {
-        if (transaction == null) {
-            throw new ExecWithoutMultiException();
+    @Override public List<Object> exec() throws ExecWithoutMultiException {
+        List<Object> ret = null;
+        synchronized (this) {
+            if (transaction == null) {
+                throw new ExecWithoutMultiException();
+            }
+            try {
+                ret = transaction.exec();
+            }
+            catch (JedisDataException e) {
+            }
+            finally {
+                if (pool != null && jedis != null) {
+                    jedis.close();
+                }
+            }
         }
-        try {
-            List<Object> ret = transaction.exec();
-            parent.execd();
-            return ret;
-        }
-        catch (JedisDataException e) {
-            parent.execd();
-            return null;
-        }
+        parent.execd();
+        return ret;
     }
 
     @Override public IRedisClient multi() {

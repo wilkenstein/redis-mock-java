@@ -152,19 +152,21 @@ public final class JedisIRedisClient extends AbstractJedisIRedisClient {
         return new JedisIRedisClientMulti(pool, this);
     }
 
-    @Override public synchronized String watch(String key) {
+    @Override public String watch(String key) {
         String[] keys = new String[1];
         keys[0] = key;
         // Are we using a pool? If so, we have to go to a single client
         // to enable watch semantics.
-        if (pool != null && jedis == null) {
-            try {
-                jedis = pool.getResource();
-            }
-            catch (Exception e) {
-                if (jedis != null) {
-                    jedis.close();
-                    jedis = null;
+        synchronized (this) {
+            if (pool != null && jedis == null) {
+                try {
+                    jedis = pool.getResource();
+                }
+                catch (Exception e) {
+                    if (jedis != null) {
+                        jedis.close();
+                        jedis = null;
+                    }
                 }
             }
         }
