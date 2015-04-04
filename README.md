@@ -72,6 +72,8 @@ $ mvn test
 
 ## Versions
 
+* 0.0.14
+  - Fix the JedisIRedisClient entirely to disallow watches with pools.
 * 0.0.13
   - Attempt to fix a deadlock condition in JedisIRedisClient & Multi.
 * 0.0.12
