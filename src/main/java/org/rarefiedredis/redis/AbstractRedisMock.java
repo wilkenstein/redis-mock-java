@@ -15,6 +15,9 @@ public abstract class AbstractRedisMock implements IRedis {
     public AbstractRedisMock() {
     }
 
+    @Override public void close() {
+    }
+
     /* IRedisKeys commands */
 
     @Override public Long del(String ... keys) throws NotImplementedException {

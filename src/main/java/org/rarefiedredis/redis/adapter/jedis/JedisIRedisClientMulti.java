@@ -28,34 +28,29 @@ import java.lang.reflect.InvocationTargetException;
 
 public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
 
-    private JedisPool pool;
+    private final JedisPool pool;
     private Jedis jedis;
     private Transaction transaction;
-    private JedisIRedisClient parent;
 
-    public JedisIRedisClientMulti(JedisPool pool, JedisIRedisClient parent) {
+    public JedisIRedisClientMulti(JedisPool pool) {
         this.pool = pool;
         this.jedis = null;
-        this.parent = parent;
         initialize();
     }
 
-    public JedisIRedisClientMulti(Jedis jedis, JedisIRedisClient parent) {
+    public JedisIRedisClientMulti(Jedis jedis) {
         this.pool = null;
         this.jedis = jedis;
-        this.parent = parent;
         initialize();
     }
 
     private void initialize() {
         Jedis jedis = null;
         try {
-            if (this.jedis != null) {
-                jedis = this.jedis;
+            if (pool != null) {
+                this.jedis = pool.getResource();
             }
-            else {
-                jedis = pool.getResource();
-            }
+            jedis = this.jedis;
             transaction = jedis.multi();
         }
         catch (Exception e) {
@@ -63,8 +58,11 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
             if (pool != null && jedis != null) {
                 jedis.close();
             }
-            parent.execd();
         }
+    }
+
+    @Override public IRedisClient createClient() {
+        return this;
     }
 
     @Override public Object command(String name, Object ... args) {
@@ -127,7 +125,6 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
                 }
             }
         }
-        parent.execd();
         return ret;
     }
 

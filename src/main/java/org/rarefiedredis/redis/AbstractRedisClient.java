@@ -15,6 +15,9 @@ public abstract class AbstractRedisClient implements IRedisClient {
     public AbstractRedisClient() {
     }
 
+    @Override public void close() {
+    }
+
     /* IRedisKeys commands */
 
     @Override public Long del(String ... keys) throws NotImplementedException {

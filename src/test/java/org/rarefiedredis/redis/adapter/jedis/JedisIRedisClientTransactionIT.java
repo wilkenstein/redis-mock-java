@@ -76,10 +76,11 @@ public class JedisIRedisClientTransactionIT {
         String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         String v = "v";
-        assertEquals("OK", redis.watch(k));
-        IRedisClient other = new JedisIRedisClient(new JedisPool(new JedisPoolConfig(), "localhost"));
-        IRedisClient multi = redis.multi();
+        IRedisClient client = redis.createClient();
+        IRedisClient other = redis.createClient();
+        assertEquals("OK", client.watch(k));
         try {
+            IRedisClient multi = client.multi();
             multi.lpush(k, v1);
             multi.lpush(k, v2);
             multi.lpush(k, v3);
@@ -100,18 +101,19 @@ public class JedisIRedisClientTransactionIT {
         String k1 = rander.randkey(), k2 = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         String v = "v";
-        assertEquals("OK", redis.watch(k1));
-        assertEquals("OK", redis.watch(k2));
-        IRedisClient other = new JedisIRedisClient(new JedisPool(new JedisPoolConfig(), "localhost"));
-        IRedisClient multi = redis.multi();
+        IRedisClient client = redis.createClient();
+        IRedisClient other = redis.createClient();
+        assertEquals("OK", client.watch(k1));
+        assertEquals("OK", client.watch(k2));
         try {
+            IRedisClient multi = client.multi();
             multi.lpush(k1, v1);
             multi.rpush(k2, v2);
             multi.lpush(k1, v3);
             other.lpush(k1, v); // Should fail the exec.
             List<Object> replies = multi.exec();
             assertEquals(null, replies);
-            multi = redis.multi();
+            multi = client.multi();
             multi.lpush(k1, v1);
             multi.rpush(k2, v2);
             multi.lpush(k1, v3);
@@ -139,9 +141,9 @@ public class JedisIRedisClientTransactionIT {
     }
 
     @Test public void watchShouldFailAllClientExecsThatAreWatchingTheSameKeyIfTheKeyChanges() throws NotImplementedException {
-        IRedisClient c1 = new JedisIRedisClient(pool), c2 = new JedisIRedisClient(pool), c3 = new JedisIRedisClient(pool);
         String k = rander.randkey();
         String v = "v";
+        IRedisClient c1 = redis.createClient(), c2 = redis.createClient(), c3 = redis.createClient();
         try {
             assertEquals("OK", c1.watch(k));
             assertEquals("OK", c2.watch(k));
@@ -198,10 +200,11 @@ public class JedisIRedisClientTransactionIT {
         String k = rander.randkey();
         String v1 = "v1", v2 = "v2", v3 = "v3";
         String v = "v";
-        assertEquals("OK", redis.watch(k));
-        IRedisClient other = new JedisIRedisClient(new JedisPool(new JedisPoolConfig(), "localhost"));
+        IRedisClient client = redis.createClient();
+        IRedisClient other = redis.createClient();
+        assertEquals("OK", client.watch(k));
         try {
-            IRedisClient multi = redis.multi();
+            IRedisClient multi = client.multi();
             multi.lpush(k, v1);
             multi.rpush(k, v2);
             multi.lpush(k, v3);

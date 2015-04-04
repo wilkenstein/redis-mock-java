@@ -38,8 +38,8 @@ import java.lang.reflect.InvocationTargetException;
 
 public final class JedisIRedisClient extends AbstractJedisIRedisClient {
 
-    private JedisPool pool;
-    private Jedis jedis;
+    private final JedisPool pool;
+    private final Jedis jedis;
 
     public JedisIRedisClient(JedisPool pool) {
         this.pool = pool;
@@ -51,7 +51,29 @@ public final class JedisIRedisClient extends AbstractJedisIRedisClient {
         this.jedis = jedis;
     }
 
-    @Override public synchronized Object command(final String name, final Object ... args) {
+    @Override public IRedisClient createClient() {
+        if (pool != null) {
+            Jedis client = null;
+            try {
+                client = pool.getResource();
+                return new JedisIRedisClient(client);
+            }
+            catch (Exception e) {
+                if (client != null) {
+                    client.close();
+                }
+            }
+        }
+        return this;
+    }
+
+    @Override public void close() {
+        if (jedis != null) {
+            jedis.close();
+        }
+    }
+
+    @Override public Object command(final String name, final Object ... args) {
         Jedis jedis = null;
         Object ret = null;
         try {
@@ -136,39 +158,19 @@ public final class JedisIRedisClient extends AbstractJedisIRedisClient {
         return ret;
     }
 
-    public synchronized void execd() {
-        // Switch back to using the pool if a multi execd
-        // and we were watching a key.
-        if (pool != null && jedis != null) {
-            jedis.close();
-            jedis = null;
-        }
-    }
-
     @Override public IRedisClient multi() {
         if (jedis != null) {
-            return new JedisIRedisClientMulti(jedis, this);
+            return new JedisIRedisClientMulti(jedis);
         }
-        return new JedisIRedisClientMulti(pool, this);
+        return new JedisIRedisClientMulti(pool);
     }
 
     @Override public String watch(String key) {
         String[] keys = new String[1];
         keys[0] = key;
-        // Are we using a pool? If so, we have to go to a single client
-        // to enable watch semantics.
-        synchronized (this) {
-            if (pool != null && jedis == null) {
-                try {
-                    jedis = pool.getResource();
-                }
-                catch (Exception e) {
-                    if (jedis != null) {
-                        jedis.close();
-                        jedis = null;
-                    }
-                }
-            }
+        // Are we using a pool? If so, cowardly bail.
+        if (pool != null) {
+            return null;
         }
         return (String)command("watch", new Object[] { keys });
     }
