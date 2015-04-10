@@ -19,7 +19,7 @@ import javax.script.ScriptException;
 
 public final class LuaScripter {
 
-    private IRedis redis;
+    private IRedisClient redis;
     private StringBuilder redisBindSB;
     private ScriptEngine scriptEngine;
 
@@ -27,7 +27,7 @@ public final class LuaScripter {
         this(new RedisMock());
     }
 
-    public LuaScripter(IRedis redis) {
+    public LuaScripter(IRedisClient redis) {
         this.redis = redis;
         this.redisBindSB = new StringBuilder("redis = {}\n");
         this.redisBindSB.append("redisObj = redisObj or {}\n");

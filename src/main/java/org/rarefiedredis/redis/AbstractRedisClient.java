@@ -412,6 +412,10 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
+    @Override public Long zadd(String key, double value, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException, SyntaxErrorException, NotFloatException {
+        throw new NotImplementedException();
+    }
+
     @Override public Long zcard(String key) throws WrongTypeException, NotImplementedException{
         throw new NotImplementedException();
     }

@@ -5,7 +5,7 @@ import redis.clients.jedis.Tuple;
 import redis.clients.jedis.exceptions.JedisException;
 
 import org.rarefiedredis.redis.RedisMock;
-import org.rarefiedredis.redis.IRedis;
+import org.rarefiedredis.redis.IRedisClient;
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
 
 import java.util.List;
@@ -16,14 +16,14 @@ import java.util.HashSet;
 
 public class JedisAdapter extends Jedis {
 
-    private IRedis redis;
+    private IRedisClient redis;
 
     public JedisAdapter() {
         super("");
         this.redis = new RedisMock();
     }
 
-    public JedisAdapter(IRedis redis) {
+    public JedisAdapter(IRedisClient redis) {
         super("");
         this.redis = redis;
     }

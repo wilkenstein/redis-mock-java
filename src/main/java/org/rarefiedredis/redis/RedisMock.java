@@ -37,6 +37,8 @@ public final class RedisMock extends AbstractRedisMock {
     private RedisSetCache setCache;
     /** Cache to hold hashes. */
     private RedisHashCache hashCache;
+    /** Cache to hold sorted sets. */
+    private RedisSortedSetCache zsetCache;
     /** List of all our caches. */
     private List<IRedisCache> caches;
     /** Expiration timers. */
@@ -53,11 +55,13 @@ public final class RedisMock extends AbstractRedisMock {
         listCache = new RedisListCache();
         setCache = new RedisSetCache();
         hashCache = new RedisHashCache();
+        zsetCache = new RedisSortedSetCache();
         caches = new ArrayList<IRedisCache>();
         caches.add(stringCache);
         caches.add(listCache);
         caches.add(setCache);
         caches.add(hashCache);
+        caches.add(zsetCache);
         timers = new HashMap<String, Timer>();
         watchers = new HashMap<String, WatchKey>();
     }
@@ -1393,6 +1397,46 @@ public final class RedisMock extends AbstractRedisMock {
         }
         // TODO: Multi-key commands.
         return false;
+    }
+
+    /* IRedisSortedSet commands */
+
+    @Override public synchronized Long zadd(final String key, final ZsetPair scoremember, final ZsetPair ... scoresmembers) throws WrongTypeException {
+        checkType(key, "zset");
+        Long count = 0L;
+        if (!zsetCache.get(key).contains(scoremember.member)) {
+            ++count;
+        }
+        zsetCache.set(key, scoremember.member, scoremember.score);
+        for (ZsetPair sms : scoresmembers) {
+            if (!zsetCache.get(key).contains(sms.member)) {
+                ++count;
+            }
+            zsetCache.set(key, sms.member, sms.score);
+        }
+        return count;
+    }
+
+    @Override public Long zadd(final String key, final double value, final String member, final Object ... scoresmembers) throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        if (scoresmembers.length % 2 != 0) {
+            throw new SyntaxErrorException();
+        }
+        ZsetPair pair = new ZsetPair(value, member);
+        ZsetPair[] pairs = new ZsetPair[scoresmembers.length];
+        for (int idx = 0, pidx = 1; idx < scoresmembers.length; ++idx) {
+            if (idx % 2 != 0) {
+                continue;
+            }
+            if (!(scoresmembers[idx] instanceof Double)) {
+                throw new NotFloatException();
+            }
+            if (!(scoresmembers[idx + 1] instanceof String)) {
+                scoresmembers[idx + 1] = scoresmembers[idx + 1].toString();
+            }
+            pairs[pidx] = new ZsetPair((Double)scoresmembers[idx], (String)scoresmembers[idx + 1]);
+            ++pidx;
+        }
+        return zadd(key, pair, pairs);
     }
 
 }

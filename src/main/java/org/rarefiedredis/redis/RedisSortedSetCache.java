@@ -44,6 +44,15 @@ public final class RedisSortedSetCache implements IRedisCache<String, Set<String
                         @Override public int compare(String a, String b) {
                             Double aScore = scores.get(key).get(a);
                             Double bScore = scores.get(key).get(b);
+                            if (aScore == null && bScore == null) {
+                                return 0;
+                            }
+                            if (aScore == null && bScore != null) {
+                                return 1;
+                            }
+                            if (aScore != null && bScore == null) {
+                                return -1;
+                            }
                             if (aScore < bScore) {
                                 return -1;
                             }
@@ -80,7 +89,7 @@ public final class RedisSortedSetCache implements IRedisCache<String, Set<String
     }
 
     @Override public String type() {
-        return "set";
+        return "zset";
     }
 
 }

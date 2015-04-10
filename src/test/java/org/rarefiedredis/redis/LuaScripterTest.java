@@ -55,7 +55,7 @@ public class LuaScripterTest {
     }
 
     @Ignore("pending") @Test public void executeShouldExecuteRedisFunctionsInALuaScript() {
-        IRedis redis = new RedisMock();
+        IRedisClient redis = new RedisMock();
         LuaScripter lua = new LuaScripter(redis);
         List<String> keys = new ArrayList<String>(1);
         keys.add("foo");

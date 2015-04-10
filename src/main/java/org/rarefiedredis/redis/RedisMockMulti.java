@@ -19,10 +19,10 @@ public final class RedisMockMulti extends AbstractRedisMock {
         }
     }
 
-    private IRedis redisMock;
+    private AbstractRedisMock redisMock;
     private List<MultiCommand> commands;
 
-    public RedisMockMulti(IRedis redisMock) {
+    public RedisMockMulti(AbstractRedisMock redisMock) {
         this.redisMock = redisMock;
         commands = new ArrayList<MultiCommand>();
     }
