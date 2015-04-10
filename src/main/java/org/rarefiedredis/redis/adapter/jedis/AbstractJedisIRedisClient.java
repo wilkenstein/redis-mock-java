@@ -887,13 +887,19 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
 
     // multi & watch are both abstract.
 
-    @Override public Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) {
+    @Override public Long zadd(final String key, final ZsetPair scoremember, final ZsetPair ... scoresmembers) {
+        if (scoremember == null) {
+            return null;
+        }
         if (scoresmembers.length == 0) {
             return (Long)command("zadd", key, scoremember.score, scoremember.member);
         }
         Map<String, Double> sms = new HashMap<String, Double>();
         sms.put(scoremember.member, scoremember.score);
         for (ZsetPair pair : scoresmembers) {
+            if (pair == null) {
+                continue;
+            }
             sms.put(pair.member, pair.score);
         }
         return (Long)command("zadd", key, sms);

@@ -93,4 +93,22 @@ public class RedisMockSortedSetTest {
         assertEquals(false, true);
     }
 
+    @Test public void zscardShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        assertEquals(0L, (long)redis.zcard("key"));
+    }
+
+    @Test public void zcardShouldReturnTheZSetCardinality() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        assertEquals(1L, (long)redis.zadd(k, 1.0d, v1));
+        assertEquals(1L, (long)redis.zcard(k));
+        assertEquals("zset", redis.type(k));
+        assertEquals(2L, (long)redis.zadd(k, 2.0d, v2, 3.0d, v3));
+        assertEquals(3L, (long)redis.zcard(k));
+        assertEquals(0L, (long)redis.zadd(k, 2.0d, v3, 1.0d, v2, 0.0d, v1));
+        assertEquals(3L, (long)redis.zcard(k));
+    }
+
 }
