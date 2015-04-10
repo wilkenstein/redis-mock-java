@@ -899,6 +899,27 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
         return (Long)command("zadd", key, sms);
     }
 
+    @Override public Long zadd(final String key, final double score, final String member, final Object ... scoresmembers) {
+        if (scoresmembers.length == 0) {
+            return (Long)command("zadd", key, score, member);
+        }
+        Map<String, Double> sms = new HashMap<String, Double>();
+        sms.put(member, score);
+        for (int idx = 0; idx < scoresmembers.length; ++idx) {
+            if (idx % 2 != 0) {
+                continue;
+            }
+            if (!(scoresmembers[idx] instanceof Double)) {
+                continue;
+            }
+            if (!(scoresmembers[idx + 1] instanceof String)) {
+                scoresmembers[idx + 1] = scoresmembers[idx + 1].toString();
+            }
+            sms.put((String)scoresmembers[idx + 1], (Double)scoresmembers[idx]);
+        }
+        return (Long)command("zadd", key, sms);
+    }
+
     @Override public Long zcard(String key) {
         return (Long)command("zcard", key);
     }

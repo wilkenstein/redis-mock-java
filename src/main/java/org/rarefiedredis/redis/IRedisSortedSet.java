@@ -42,7 +42,7 @@ public interface IRedisSortedSet {
 
     Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) throws WrongTypeException, NotImplementedException;
 
-    Long zadd(String key, double value, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException, SyntaxErrorException, NotFloatException;
+    Long zadd(String key, double score, String member, Object ... scoresmembers) throws WrongTypeException, NotImplementedException, SyntaxErrorException, NotFloatException;
 
     Long zcard(String key) throws WrongTypeException, NotImplementedException;
 

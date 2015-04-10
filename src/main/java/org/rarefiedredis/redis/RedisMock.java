@@ -1404,11 +1404,14 @@ public final class RedisMock extends AbstractRedisMock {
     @Override public synchronized Long zadd(final String key, final ZsetPair scoremember, final ZsetPair ... scoresmembers) throws WrongTypeException {
         checkType(key, "zset");
         Long count = 0L;
-        if (!zsetCache.get(key).contains(scoremember.member)) {
+        if (!zsetCache.exists(key) || !zsetCache.get(key).contains(scoremember.member)) {
             ++count;
         }
         zsetCache.set(key, scoremember.member, scoremember.score);
         for (ZsetPair sms : scoresmembers) {
+            if (sms == null) {
+                continue;
+            }
             if (!zsetCache.get(key).contains(sms.member)) {
                 ++count;
             }
@@ -1417,13 +1420,13 @@ public final class RedisMock extends AbstractRedisMock {
         return count;
     }
 
-    @Override public Long zadd(final String key, final double value, final String member, final Object ... scoresmembers) throws WrongTypeException, SyntaxErrorException, NotFloatException {
+    @Override public Long zadd(final String key, final double score, final String member, final Object ... scoresmembers) throws WrongTypeException, SyntaxErrorException, NotFloatException {
         if (scoresmembers.length % 2 != 0) {
             throw new SyntaxErrorException();
         }
-        ZsetPair pair = new ZsetPair(value, member);
-        ZsetPair[] pairs = new ZsetPair[scoresmembers.length];
-        for (int idx = 0, pidx = 1; idx < scoresmembers.length; ++idx) {
+        ZsetPair pair = new ZsetPair(score, member);
+        ZsetPair[] pairs = new ZsetPair[scoresmembers.length/2];
+        for (int idx = 0, pidx = 0; idx < scoresmembers.length; ++idx) {
             if (idx % 2 != 0) {
                 continue;
             }
@@ -1437,6 +1440,19 @@ public final class RedisMock extends AbstractRedisMock {
             ++pidx;
         }
         return zadd(key, pair, pairs);
+    }
+
+    @Override public synchronized Long zcard(String key) throws WrongTypeException {
+        checkType(key, "zset");
+        if (!zsetCache.exists(key)) {
+            return 0L;
+        }
+        return (long)zsetCache.get(key).size();
+    }
+
+    @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {
+        checkType(key, "zset");
+        return zsetCache.getScore(key, member);
     }
 
 }
