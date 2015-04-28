@@ -1476,6 +1476,122 @@ public final class RedisMock extends AbstractRedisMock {
         return String.valueOf(newScore);
     }
 
+    @Override public synchronized Long zinterstore(final String destination, final int numkeys, final String ... options) throws WrongTypeException, SyntaxErrorException {
+        if (exists(destination)) {
+            del(destination);
+        }
+        List<String> keys = new ArrayList<String>(numkeys);
+        Map<String, Double> weights = new HashMap<String, Double>();
+        String aggregate = "sum";
+        if (options.length < numkeys) {
+            throw new SyntaxErrorException();
+        }
+        int i;
+        for (i = 0; i < numkeys; ++i) {
+            checkType(options[i], "zset");
+            keys.add(options[i]);
+        }
+        i = numkeys;
+        while (i < options.length) {
+            if (options[i] == null) {
+                continue;
+            }
+            if ("weights".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                int ki = 0;
+                while (!("aggregate".equals(options[i])) && i < options.length) {
+                    ++i;
+                    weights.put(keys.get(ki), Double.valueOf(options[i]));
+                    ++ki;
+                }
+            }
+            else if ("aggregate".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                aggregate = options[i + 1];
+                ++i;
+            }
+            else {
+                throw new SyntaxErrorException();
+            }
+        }
+        String key = keys.get(0);
+        Set<ZsetPair> range = zrange(key, 0, -1, "withscores");
+        for (ZsetPair pair : range) {
+            if (weights.containsKey(key)) {
+                pair.score *= weights.get(key);
+            }
+        }
+        for (String k : keys.subList(1, numkeys)) {
+            Set<ZsetPair> inter = new HashSet<ZsetPair>();
+            for (ZsetPair pair : range) {
+                if (!zsetCache.existsValue(k, pair.member)) {
+                    continue;
+                }
+                Double score = zsetCache.getScore(k, pair.member);
+                if (weights.containsKey(k)) {
+                    score *= weights.get(k);
+                }
+                if ("min".equals(aggregate)) {
+                    pair.score = Math.min(pair.score, score);
+                }
+                else if ("max".equals(aggregate)) {
+                    pair.score = Math.max(pair.score, score);
+                }
+                else { // == sum
+                    pair.score += score;
+                }
+                inter.add(pair);
+            }
+            range = inter;
+        }
+        Long count = 0L;
+        for (ZsetPair pair : range) {
+            zadd(destination, pair);
+            ++count;
+        }
+        return count;
+    }
+
+    @Override public synchronized Set<ZsetPair> zrange(final String key, long start, long stop, final String ... options) throws WrongTypeException {
+        checkType(key, "zset");
+        boolean withscores = false;
+        if (start < 0) {
+            start = Math.max(zcard(key) + start, 0);
+        }
+        if (stop < 0) {
+            stop = zcard(key) + stop;
+        }
+        Set<ZsetPair> range = new HashSet<ZsetPair>();
+        if (!zsetCache.exists(key)) {
+            return range;
+        }
+        if (options.length > 0 && options[0] != null && "withscores".equals(options[0].toLowerCase())) {
+            withscores = true;
+        }
+        int count = 0;
+        for (String member : zsetCache.get(key)) {
+            if (start > count) {
+                ++count;
+                continue;
+            }
+            if (stop < count) {
+                break;
+            }
+            ZsetPair pair = new ZsetPair(member);
+            Double score = zsetCache.getScore(key, member);
+            if (withscores) {
+                pair.score = zsetCache.getScore(key, member);
+            }
+            range.add(pair);
+            ++count;
+        }
+        return range;
+    }
+
     @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {
         checkType(key, "zset");
         return zsetCache.getScore(key, member);

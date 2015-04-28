@@ -2,6 +2,8 @@ package org.rarefiedredis.redis;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 
 public interface IRedisSortedSet {
 
@@ -38,6 +40,14 @@ public interface IRedisSortedSet {
             return set;
         }
 
+        public static Map<String, Double> asMap(Set<ZsetPair> pairs) {
+            Map<String, Double> map = new HashMap<String, Double>();
+            for (ZsetPair pair : pairs) {
+                map.put(pair.member, pair.score);
+            }
+            return map;
+        }
+
     }
 
     Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) throws WrongTypeException, NotImplementedException;
@@ -50,7 +60,9 @@ public interface IRedisSortedSet {
 
     String zincrby(String key, double increment, String member) throws WrongTypeException, NotImplementedException;
 
-    Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException;
+    Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
+
+    //Long zinterstore(String destination, int numkeys, Object ... options) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
 
     Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException;
 
