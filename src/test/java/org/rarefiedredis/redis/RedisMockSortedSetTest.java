@@ -180,6 +180,134 @@ public class RedisMockSortedSetTest {
         assertEquals(2.2, (double)redis.zscore(k, v2), 0.01);
     }
 
+    @Test public void zinterstoreShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "destination", k1 = "k1", k2 = "k2", k3 = "k3";
+        String v = "v";
+        redis.set(k1, v);
+        redis.zadd(k2, 0.0, v);
+        redis.set(k3, v);
+        try {
+            redis.zinterstore(d, 2, k1, k2);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k1));
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zinterstore(d, 2, k2, k3);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k3));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zinterstoreShouldStoreAnInterOfTwoZsetsIntoDestination() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "destination", k1 = "k1", k2 = "k2";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        redis.zadd(k1, 1.0, v1, 2.0, v2, 3.0, v3);
+        redis.zadd(k2, 1.0, v1, 3.0, v3);
+        assertEquals(2L, (long)redis.zinterstore(d, 2, k1, k2));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(2, range.size());
+        Map<String, Double> map = ZsetPair.asMap(range);
+        assertEquals(true, map.containsKey(v1));
+        assertEquals(2.0, map.get(v1), 0.01);
+        assertEquals(true, map.containsKey(v3));
+        assertEquals(6.0, map.get(v3), 0.01);
+        redis.zadd(k2, 2.0, v2);
+        redis.zrem(k2, v1, v3);
+        assertEquals(1L, (long)redis.zinterstore(d, 2, k1, k2));
+        range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(1, range.size());
+        map = ZsetPair.asMap(range);
+        assertEquals(true, map.containsKey(v2));
+        assertEquals(4.0, map.get(v2), 0.01);
+    }
+
+    @Test public void zinterstoreShouldStoreAnInterOfNZsetsIntoDestination() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "destination", k1 = "k1", k2= "k2", k3 = "k3", k4 = "k4", k5 = "k5";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        assertEquals(3L, (long)redis.zadd(k1, 1.0, v1, 3.0, v3, 5.0, v5));
+        assertEquals(5L, (long)redis.zadd(k2, 1.0, v1, 2.0, v2, 3.0, v3, 4.0, v4, 5.0, v5));
+        assertEquals(5L, (long)redis.zadd(k3, 0.0, v1, 0.0, v2, 0.0, v3, 0.0, v4, 0.0, v5));
+        assertEquals(3L, (long)redis.zadd(k4, 3.0, v1, 2.0, v3, 1.0, v5));
+        assertEquals(5L, (long)redis.zadd(k5, 1.0, v1, 1.0, v2, 1.0, v3, 1.0, v4, 1.0, v5));
+        assertEquals(3L, (long)redis.zinterstore(d, 5, k1, k2, k3, k4, k5));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(3, range.size());
+        Map<String, Double> map = ZsetPair.asMap(range);
+        assertEquals(true, map.containsKey(v1));
+        assertEquals(6.0, map.get(v1), 0.01);
+        assertEquals(true, map.containsKey(v3));
+        assertEquals(9.0, map.get(v3), 0.01);
+        assertEquals(true, map.containsKey(v5));
+        assertEquals(12.0, map.get(v5), 0.01);
+        assertEquals(1L, (long)redis.zadd(k1, 4.0, v4));
+        assertEquals(1L, (long)redis.zadd(k4, 0.0, v4));
+        assertEquals(4L, (long)redis.zinterstore(d, 5, k1, k2, k3, k4, k5));
+        range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(4, range.size());
+        map = ZsetPair.asMap(range);
+        assertEquals(true, map.containsKey(v1));
+        assertEquals(6.0, map.get(v1), 0.01);
+        assertEquals(true, map.containsKey(v3));
+        assertEquals(9.0, map.get(v3), 0.01);
+        assertEquals(true, map.containsKey(v4));
+        assertEquals(9.0, map.get(v4), 0.01);
+        assertEquals(true, map.containsKey(v5));
+        assertEquals(12.0, map.get(v5), 0.01);
+    }
+
+    @Test public void zinterstoreShouldWeightScores() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "destination", k1 = "k1", k2= "k2", k3 = "k3", k4 = "k4", k5 = "k5";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        assertEquals(3L, (long)redis.zadd(k1, 1.0, v1, 3.0, v3, 5.0, v5));
+        assertEquals(5L, (long)redis.zadd(k2, 1.0, v1, 2.0, v2, 3.0, v3, 4.0, v4, 5.0, v5));
+        assertEquals(5L, (long)redis.zadd(k3, 0.0, v1, 0.0, v2, 0.0, v3, 0.0, v4, 0.0, v5));
+        assertEquals(3L, (long)redis.zadd(k4, 3.0, v1, 2.0, v3, 1.0, v5));
+        assertEquals(5L, (long)redis.zadd(k5, 1.0, v1, 1.0, v2, 1.0, v3, 1.0, v4, 1.0, v5));
+        assertEquals(3L, (long)redis.zinterstore(d, 5, k1, k2, k3, k4, k5, "weights", "1", "0", "0", "0"));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(3, range.size());
+        Map<String, Double> map = ZsetPair.asMap(range);
+        assertEquals(true, map.containsKey(v1));
+        assertEquals(2.0, map.get(v1), 0.01);
+        assertEquals(true, map.containsKey(v3));
+        assertEquals(4.0, map.get(v3), 0.01);
+        assertEquals(true, map.containsKey(v5));
+        assertEquals(6.0, map.get(v5), 0.01);
+        assertEquals(1L, (long)redis.zadd(k1, 4.0, v4));
+        assertEquals(1L, (long)redis.zadd(k4, 0.0, v4));
+        assertEquals(4L, (long)redis.zinterstore(d, 5, k1, k2, k3, k4, k5, "weights", "0", "2", "0", "3", "10"));
+        range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(4, range.size());
+        map = ZsetPair.asMap(range);
+        assertEquals(true, map.containsKey(v4));
+        assertEquals(18.0, map.get(v4), 0.01);
+        assertEquals(true, map.containsKey(v1));
+        assertEquals(21.0, map.get(v1), 0.01);
+        assertEquals(true, map.containsKey(v3));
+        assertEquals(22.0, map.get(v3), 0.01);
+        assertEquals(true, map.containsKey(v5));
+        assertEquals(23.0, map.get(v5), 0.01);
+    }
+
     @Test public void zrangeShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
         RedisMock redis = new RedisMock();
         String k = "key";
@@ -259,6 +387,56 @@ public class RedisMockSortedSetTest {
         assertEquals(2.0, map.get(v2), 0.1);
         assertEquals(true, map.containsKey(v3));
         assertEquals(3.0, map.get(v3), 0.1);
+    }
+
+    @Test public void zremShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zrem(k, v);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zremShouldReturnZeroIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        assertEquals(0L, (long)redis.zrem(k, v));
+    }
+
+    @Test public void zremShouldReturnZeroIfTheMembersDoNotExist() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v", nv = "nv", nv2 = "nv2";
+        redis.zadd(k, 1.1, v);
+        assertEquals(0L, (long)redis.zrem(k, nv));
+        assertEquals(0L, (long)redis.zrem(k, nv, nv2));
+    }
+
+    @Test public void zremShouldRemoveTheMembersAndReturnTheRemovedCount() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v1 = "v1", v11 = "v11", v2 = "v2", v5 = "v5", v7 = "v7";
+        assertEquals(5L, (long)redis.zadd(k, 1.0, v1, 1.0, v11, 2.0, v2, 5.0, v5, 7.0, v7));
+        assertEquals(5L, (long)redis.zcard(k));
+        assertEquals(1.0, (double)redis.zscore(k, v1), 0.01);
+        assertEquals(1.0, (double)redis.zscore(k, v11), 0.01);
+        assertEquals(2.0, (double)redis.zscore(k, v2), 0.01);
+        assertEquals(5.0, (double)redis.zscore(k, v5), 0.01);
+        assertEquals(7.0, (double)redis.zscore(k, v7), 0.01);
+        assertEquals(2L, (long)redis.zrem(k, v1, v5));
+        assertEquals(3L, (long)redis.zcard(k));
+        assertEquals(3L, (long)redis.zrem(k, v2, "nv", v7, "vv", v11));
+        assertEquals(0L, (long)redis.zcard(k));
     }
 
 }

@@ -1501,10 +1501,11 @@ public final class RedisMock extends AbstractRedisMock {
                     throw new SyntaxErrorException();
                 }
                 int ki = 0;
-                while (!("aggregate".equals(options[i])) && i < options.length) {
-                    ++i;
+                ++i;
+                while (i < options.length && !("aggregate".equals(options[i]))) {
                     weights.put(keys.get(ki), Double.valueOf(options[i]));
                     ++ki;
+                    ++i;
                 }
             }
             else if ("aggregate".equals(options[i].toLowerCase())) {
@@ -1590,6 +1591,19 @@ public final class RedisMock extends AbstractRedisMock {
             ++count;
         }
         return range;
+    }
+
+    @Override public synchronized Long zrem(final String key, final String member, final String ... members) throws WrongTypeException {
+        checkType(key, "zset");
+        Long count = 0L;
+        count += zsetCache.removeValue(key, member) ? 1L : 0L;
+        for (String m : members) {
+            count += zsetCache.removeValue(key, m) ? 1L : 0L;
+        }
+        if (zcard(key) == 0L) {
+            del(key);
+        }
+        return count;
     }
 
     @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {

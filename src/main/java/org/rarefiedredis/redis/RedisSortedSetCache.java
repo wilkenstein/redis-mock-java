@@ -69,8 +69,9 @@ public final class RedisSortedSetCache implements IRedisCache<String, Set<String
             scores.put(key, new HashMap<String, Double>());
         }
         Double score = (Double)arguments[0];
-        cache.get(key).add(value);
+        // The order of operations is important here.
         scores.get(key).put(value, score);
+        cache.get(key).add(value);
     }
 
     @Override public Set<String> get(final String key) {
@@ -88,8 +89,10 @@ public final class RedisSortedSetCache implements IRedisCache<String, Set<String
         if (!cache.containsKey(key)) {
             return false;
         }
+        // The order of operations is important here.
+        boolean rem = cache.get(key).remove(value);
         scores.get(key).remove(value);
-        return cache.get(key).remove(value);
+        return rem;
     }
 
     @Override public String type() {
