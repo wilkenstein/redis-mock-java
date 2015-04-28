@@ -1442,12 +1442,38 @@ public final class RedisMock extends AbstractRedisMock {
         return zadd(key, pair, pairs);
     }
 
-    @Override public synchronized Long zcard(String key) throws WrongTypeException {
+    @Override public synchronized Long zcard(final String key) throws WrongTypeException {
         checkType(key, "zset");
         if (!zsetCache.exists(key)) {
             return 0L;
         }
         return (long)zsetCache.get(key).size();
+    }
+
+    @Override public synchronized Long zcount(final String key, final double min, final double max) throws WrongTypeException {
+        checkType(key, "zset");
+        if (!zsetCache.exists(key)) {
+            return 0L;
+        }
+        Long count = 0L;
+        for (String member : zsetCache.get(key)) {
+            Double score = zsetCache.getScore(key, member);
+            if (min <= score && score <= max) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    @Override public synchronized String zincrby(final String key, final double increment, final String member) throws WrongTypeException {
+        checkType(key, "zset");
+        if (!zsetCache.existsValue(key, member)) {
+            zsetCache.set(key, member, 0.0);
+        }
+        Double score = zsetCache.getScore(key, member);
+        Double newScore = score + increment;
+        zsetCache.set(key, member, newScore);
+        return String.valueOf(newScore);
     }
 
     @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {

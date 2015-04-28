@@ -33,6 +33,10 @@ public final class RedisSortedSetCache implements IRedisCache<String, Set<String
         return cache.containsKey(key);
     }
 
+    public Boolean existsValue(final String key, final String value) {
+        return exists(key) && cache.get(key).contains(value);
+    }
+
     @Override public void remove(final String key) {
         cache.remove(key);
         scores.remove(key);
