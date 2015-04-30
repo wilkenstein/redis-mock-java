@@ -464,6 +464,64 @@ public class RedisMockSortedSetTest {
         assertEquals(g, iter.next().member);        
     }
 
+    @Test public void zrangebylexShouldReturnBetweenARange() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotValidStringRangeItemException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String a = "a", b = "b", c = "c", d = "d", e = "e", f = "f", g = "g";
+        redis.zadd(k, 0.0, a, 0.0, b, 0.0, c, 0.0, d, 0.0, e, 0.0, f, 0.0, g);
+        Set<ZsetPair> range = redis.zrangebylex(k, "[aaa", "(g");
+        assertEquals(5, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        assertEquals(b, iter.next().member);
+        assertEquals(c, iter.next().member);
+        assertEquals(d, iter.next().member);
+        assertEquals(e, iter.next().member);
+        assertEquals(f, iter.next().member);
+        range = redis.zrangebylex(k, "(aaa", "[g");
+        assertEquals(6, range.size());
+        iter = range.iterator();
+        assertEquals(b, iter.next().member);
+        assertEquals(c, iter.next().member);
+        assertEquals(d, iter.next().member);
+        assertEquals(e, iter.next().member);
+        assertEquals(f, iter.next().member);
+        assertEquals(g, iter.next().member);
+    }
+
+    @Test public void zrangebylexShouldThrowAnErrorForInvalidStringRanges() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotValidStringRangeItemException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.zadd(k, 0.0, v);
+        try {
+            redis.zrangebylex(k, "asdf98", "23");
+        }
+        catch (NotValidStringRangeItemException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zrangebylex(k, "98", "lkuoi");
+        }
+        catch (NotValidStringRangeItemException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrangebylexShouldReturnEmptySetForNonSensicalRanges() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotValidStringRangeItemException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.zadd(k, 0.0, v);
+        assertEquals(0, redis.zrangebylex(k, "+", "-").size());
+    }
+
     @Test public void zremShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
         RedisMock redis = new RedisMock();
         String k = "key";
