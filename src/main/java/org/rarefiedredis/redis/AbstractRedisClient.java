@@ -432,7 +432,7 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException {
+    @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException {
         throw new NotImplementedException();
     }
 
@@ -440,7 +440,7 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException {
+    @Override public Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException {
         throw new NotImplementedException();
     }
 

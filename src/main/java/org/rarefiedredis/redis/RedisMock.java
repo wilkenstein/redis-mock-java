@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
@@ -1557,6 +1559,10 @@ public final class RedisMock extends AbstractRedisMock {
         return count;
     }
 
+    @Override public synchronized Long zlexcount(final String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException {
+        return (long)zrangebylex(key, min, max).size();
+    }
+
     @Override public synchronized Set<ZsetPair> zrange(final String key, long start, long stop, final String ... options) throws WrongTypeException {
         checkType(key, "zset");
         boolean withscores = false;
@@ -1589,6 +1595,53 @@ public final class RedisMock extends AbstractRedisMock {
             }
             range.add(pair);
             ++count;
+        }
+        return range;
+    }
+
+    @Override public synchronized Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotValidStringRangeItemException {
+        checkType(key, "zset");
+        if (min.charAt(0) != '(' && min.charAt(0) != '[' && min.charAt(0) != '-' && min.charAt(0) != '+') {
+            throw new NotValidStringRangeItemException();
+        }
+        if (max.charAt(0) != '(' && max.charAt(0) != '[' && max.charAt(0) != '-' && max.charAt(0) != '+') {
+            throw new NotValidStringRangeItemException();
+        }
+        Set<ZsetPair> range = new TreeSet<ZsetPair>(new Comparator<ZsetPair>() {
+                @Override public int compare(ZsetPair a, ZsetPair b) {
+                    return a.member.compareTo(b.member);
+                }
+            });
+        if (!zsetCache.exists(key)) {
+            return range;
+        }
+        String minStr = min.substring(1);
+        String maxStr = max.substring(1);
+        boolean minInclusive = min.charAt(0) == '[';
+        boolean maxInclusive = max.charAt(0) == '[';
+        boolean maxAll = max.charAt(0) == '+';
+        if (min.charAt(0) == '+') {
+            return range;
+        }
+        if (max.charAt(0) == '-') {
+            return range;
+        }
+        Set<String> members = zsetCache.get(key);
+        for (String member : members) {
+            if (member == null) {
+                continue;
+            }
+            int minc = member.compareTo(minStr);
+            int maxc = member.compareTo(maxStr);
+            if (minc > 0 && (maxc < 0 || maxAll)) {
+                range.add(new ZsetPair(member));
+            }
+            else if (minc == 0 && minInclusive) {
+                range.add(new ZsetPair(member));
+            }
+            else if (maxc == 0 && maxInclusive) {
+                range.add(new ZsetPair(member));
+            }
         }
         return range;
     }

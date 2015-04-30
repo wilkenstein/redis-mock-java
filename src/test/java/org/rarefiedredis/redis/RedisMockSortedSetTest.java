@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.List;
+import java.util.Iterator;
 
 import org.rarefiedredis.redis.IRedisSortedSet.ZsetPair;
 
@@ -387,6 +388,80 @@ public class RedisMockSortedSetTest {
         assertEquals(2.0, map.get(v2), 0.1);
         assertEquals(true, map.containsKey(v3));
         assertEquals(3.0, map.get(v3), 0.1);
+    }
+
+    @Test public void zrangebylexShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zrangebylex(k, "-", "+");
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrangebylexShouldReturnARangeFromNegInfUpToSomething() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotValidStringRangeItemException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String a = "a", b = "b", c = "c", d = "d", e = "e", f = "f", g = "g";
+        redis.zadd(k, 0.0, a, 0.0, b, 0.0, c, 0.0, d, 0.0, e, 0.0, f, 0.0, g);
+        Set<ZsetPair> range = redis.zrangebylex(k, "-", "(c");
+        assertEquals(2, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        assertEquals("a", iter.next().member);
+        assertEquals("b", iter.next().member);
+        range = redis.zrangebylex(k, "-", "[c");
+        assertEquals(3, range.size());
+        iter = range.iterator();
+        assertEquals("a", iter.next().member);
+        assertEquals("b", iter.next().member);
+        assertEquals("c", iter.next().member);
+    }
+
+    @Test public void zrangebylexShouldReturnAllMembersInOrderFromNegInfToPosInf() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotValidStringRangeItemException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String a = "a", b = "b", c = "c", d = "d", e = "e", f = "f", g = "g";
+        redis.zadd(k, 0.0, a, 0.0, b, 0.0, c, 0.0, d, 0.0, e, 0.0, f, 0.0, g);
+        Set<ZsetPair> range = redis.zrangebylex(k, "-", "+");
+        assertEquals(7, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        assertEquals(a, iter.next().member);
+        assertEquals(b, iter.next().member);
+        assertEquals(c, iter.next().member);
+        assertEquals(d, iter.next().member);
+        assertEquals(e, iter.next().member);
+        assertEquals(f, iter.next().member);
+        assertEquals(g, iter.next().member);
+    }
+
+    @Test public void zrangebylexShouldReturnFromSomethingUpToPosInf() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotValidStringRangeItemException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String a = "a", b = "b", c = "c", d = "d", e = "e", f = "f", g = "g";
+        redis.zadd(k, 0.0, a, 0.0, b, 0.0, c, 0.0, d, 0.0, e, 0.0, f, 0.0, g);
+        Set<ZsetPair> range = redis.zrangebylex(k, "(c", "+");
+        assertEquals(4, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        assertEquals(d, iter.next().member);
+        assertEquals(e, iter.next().member);
+        assertEquals(f, iter.next().member);
+        assertEquals(g, iter.next().member);
+        range = redis.zrangebylex(k, "[c", "+");
+        assertEquals(5, range.size());
+        iter = range.iterator();
+        assertEquals(c, iter.next().member);
+        assertEquals(d, iter.next().member);
+        assertEquals(e, iter.next().member);
+        assertEquals(f, iter.next().member);
+        assertEquals(g, iter.next().member);        
     }
 
     @Test public void zremShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {

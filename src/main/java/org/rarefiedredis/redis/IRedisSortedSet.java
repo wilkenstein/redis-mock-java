@@ -64,11 +64,11 @@ public interface IRedisSortedSet {
 
     //Long zinterstore(String destination, int numkeys, Object ... options) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
 
-    Long zlexcount(String key, String min, String max) throws WrongTypeException, NotImplementedException;
+    Long zlexcount(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException;
 
     Set<ZsetPair> zrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException;
 
-    Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException;
 
     Set<ZsetPair> zrevrangebylex(String key, String max, String min, String ... options) throws WrongTypeException, NotImplementedException;
 
