@@ -1599,7 +1599,7 @@ public final class RedisMock extends AbstractRedisMock {
         return range;
     }
 
-    @Override public synchronized Set<ZsetPair> zrangebylex(String key, String min, String max, String ... options) throws WrongTypeException, NotValidStringRangeItemException {
+    @Override public synchronized Set<ZsetPair> zrangebylex(final String key, String min, String max, String ... options) throws WrongTypeException, NotValidStringRangeItemException {
         checkType(key, "zset");
         if (min.charAt(0) != '(' && min.charAt(0) != '[' && min.charAt(0) != '-' && min.charAt(0) != '+') {
             throw new NotValidStringRangeItemException();
@@ -1644,6 +1644,17 @@ public final class RedisMock extends AbstractRedisMock {
             }
         }
         return range;
+    }
+
+    @Override public synchronized Set<ZsetPair> zrevrangebylex(final String key, final String max, final String min, final String ... options) throws WrongTypeException, NotValidStringRangeItemException {
+        Set<ZsetPair> range = zrangebylex(key, min, max, options);
+        Set<ZsetPair> revrange = new TreeSet<ZsetPair>(new Comparator<ZsetPair>() {
+                @Override public int compare(ZsetPair a, ZsetPair b) {
+                    return b.member.compareTo(a.member);
+                }
+            });
+        revrange.addAll(range);
+        return revrange;
     }
 
     @Override public synchronized Long zrem(final String key, final String member, final String ... members) throws WrongTypeException {
