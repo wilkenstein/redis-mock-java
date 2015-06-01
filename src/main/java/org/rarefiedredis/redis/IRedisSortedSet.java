@@ -72,7 +72,7 @@ public interface IRedisSortedSet {
 
     Set<ZsetPair> zrevrangebylex(String key, String max, String min, String ... options) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException;
 
-    Set<ZsetPair> zrangebyscore(String key, String min, String max, String ... options) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrangebyscore(String key, String min, String max, String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException, NotImplementedException;
 
     Long zrank(String key, String member) throws WrongTypeException, NotImplementedException;
 

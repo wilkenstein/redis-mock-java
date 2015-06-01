@@ -1657,6 +1657,114 @@ public final class RedisMock extends AbstractRedisMock {
         return revrange;
     }
 
+    @Override public synchronized Set<ZsetPair> zrangebyscore(final String key, String min, String max, String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException {
+        Double minf = null, maxf = null;
+        boolean minInclusive = true, maxInclusive = true;
+        checkType(key, "zset");
+        if ("-inf".equals(min)) {
+            minf = Double.MIN_VALUE;
+        }
+        if ("+inf".equals(min)) {
+            minf = Double.MAX_VALUE;
+        }
+        if ("-inf".equals(max)) {
+            maxf = Double.MIN_VALUE;
+        }
+        if ("+inf".equals(max)) {
+            maxf = Double.MAX_VALUE;
+        }
+        if (min.charAt(0) == '(') {
+            minInclusive = false;
+            min = min.substring(1);
+        }
+        if (max.charAt(0) == '(') {
+            maxInclusive = false;
+            max = max.substring(1);
+        }
+        if (minf == null) {
+            try {
+                minf = Double.parseDouble(min);
+            }
+            catch (NumberFormatException e) {
+                throw new NotFloatMinMaxException();
+            }
+        }
+        if (maxf == null) {
+            try {
+                maxf = Double.parseDouble(max);
+            }
+            catch (NumberFormatException e) {
+                throw new NotFloatMinMaxException();
+            }
+        }
+        boolean withscores = false;
+        long limitOffset = -1, limitCount = -1;
+        for (int idx = 0; idx < options.length; ++idx) {
+            String option = options[idx];
+            if (option == null) {
+                continue;
+            }
+            if ("withscores".equals(option.toLowerCase())) {
+                withscores = true;
+            }
+            if ("limit".equals(option.toLowerCase())) {
+                if (options.length <= idx + 2) {
+                    throw new SyntaxErrorException();
+                }
+                try {
+                    limitOffset = Long.parseLong(options[idx + 1]);
+                    limitCount = Long.parseLong(options[idx + 2]);
+                }
+                catch (NumberFormatException e) {
+                    throw new NotIntegerException();
+                }
+            }
+        }
+        Set<ZsetPair> range = new TreeSet<ZsetPair>(new Comparator<ZsetPair>() {
+                @Override public int compare(ZsetPair a, ZsetPair b) {
+                    return a.member.compareTo(b.member);
+                }
+            });
+        if (!zsetCache.exists(key)) {
+            return range;
+        }
+        Set<String> members = zsetCache.get(key);
+        long offset = 0;
+        for (String member : members) {
+            if (member == null) {
+                continue;
+            }
+            Double score = zsetCache.getScore(key, member);
+            if (((minInclusive && minf <= score) || (!minInclusive && minf < score)) && ((maxInclusive && score <= maxf) || (!maxInclusive && score < maxf))) {
+                if (limitOffset != -1 && offset >= limitOffset) {
+                    if (limitCount != -1) {
+                        if (range.size() < limitCount) {
+                            if (withscores) {
+                                range.add(new ZsetPair(member, score));
+                            }
+                            else {
+                                range.add(new ZsetPair(member));
+                            }
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                }
+                else if (limitOffset == -1) {
+                    if (withscores) {
+                        range.add(new ZsetPair(member, score));
+                    }
+                    else {
+                        range.add(new ZsetPair(member));
+                    }
+                }
+            }
+            ++offset;
+        }
+        return range;
+    }
+
     @Override public synchronized Long zrem(final String key, final String member, final String ... members) throws WrongTypeException {
         checkType(key, "zset");
         Long count = 0L;
