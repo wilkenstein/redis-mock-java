@@ -1955,4 +1955,39 @@ public final class RedisMock extends AbstractRedisMock {
         return count;
     }
 
+    @Override public synchronized ScanResult<Set<ZsetPair>> zscan(String key, long cursor, String ... options) throws WrongTypeException {
+        checkType(key, "zset");
+        Long count = null;
+        Pattern match = null;
+        for (int idx = 0; idx < options.length; ++idx) {
+            if (options[idx].equals("count")) {
+                count = Long.valueOf(options[idx + 1]);
+            }
+            else if (options[idx].equals("match")) {
+                match = Pattern.compile(GlobToRegEx.convertGlobToRegEx(options[idx + 1]));
+            }
+        }
+        if (count == null) {
+            count = 10L;
+        }
+        Set<ZsetPair> scanned = new TreeSet<ZsetPair>(ZsetPair.comparator());
+        Set<ZsetPair> members = zrange(key, 0, -1, "withscores");
+        Long idx = 0L;
+        for (ZsetPair pair : members) {
+            idx += 1;
+            if (idx > cursor) {
+                if (match == null || match.matcher(pair.member).matches()) {
+                    scanned.add(pair);
+                }
+                if ((long)scanned.size() >= count) {
+                    break;
+                }
+            }
+        }
+        if (idx >= zcard(key)) {
+            idx = 0L;
+        }
+        return new ScanResult<Set<ZsetPair>>(idx, scanned);
+    }
+
 }

@@ -7,6 +7,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.List;
 import java.util.Iterator;
 
@@ -1650,6 +1652,165 @@ public class RedisMockSortedSetTest {
         assertEquals(v5, pair.member);
         assertEquals(2.0, pair.score, 0.1);
         assertEquals(false, iter.hasNext());
+    }
+
+    @Test public void zscanShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zscan(k, 0);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zscanShouldScanThroughASmallZsetAndReturnEveryElement() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4";
+        assertEquals(3L, (long)redis.zadd(k, 1, v1, 2, v2, 3, v3));
+        ScanResult<Set<ZsetPair>> scan = redis.zscan(k, 0);
+        assertEquals(3, scan.results.size());
+        Iterator<ZsetPair> iter = scan.results.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        assertEquals(1L, (long)redis.zadd(k, 4, v4));
+        scan = redis.zscan(k, 0);
+        assertEquals(4, scan.results.size());
+        iter = scan.results.iterator();
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(4.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+    }
+
+    @Test public void zscanShouldScanThroughALargeSetWithCursoring() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        Map<String, Double> map = new HashMap<String, Double>();
+        for (int idx = 0; idx < 62; ++idx) {
+            ZsetPair pair = new ZsetPair(String.valueOf(idx), (double)idx);
+            redis.zadd(k, pair);
+            map.put(pair.member, pair.score);
+        }
+        Set<ZsetPair> scanned = new TreeSet<ZsetPair>(ZsetPair.comparator());
+        Long cursor = 0L;
+        while (true) {
+            ScanResult<Set<ZsetPair>> scan = redis.zscan(k, cursor);
+            scanned.addAll(scan.results);
+            cursor = scan.cursor;
+            if (cursor == 0L) {
+                break;
+            }
+        }
+        assertEquals(62, scanned.size());
+        for (ZsetPair pair : scanned) {
+            assertEquals(true, map.containsKey(pair.member));
+            assertEquals(map.get(pair.member), pair.score, 0.1);
+        }
+    }
+
+    @Test public void zscanShouldScanThroughALargeSetWithCursoringAndACount() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        Map<String, Double> map = new HashMap<String, Double>();
+        for (int idx = 0; idx < 62; ++idx) {
+            ZsetPair pair = new ZsetPair(String.valueOf(idx), (double)idx);
+            redis.zadd(k, pair);
+            map.put(pair.member, pair.score);
+        }
+        Set<ZsetPair> scanned = new TreeSet<ZsetPair>(ZsetPair.comparator());
+        Long cursor = 0L;
+        while (true) {
+            ScanResult<Set<ZsetPair>> scan = redis.zscan(k, cursor, "count", "5");
+            scanned.addAll(scan.results);
+            cursor = scan.cursor;
+            if (cursor == 0L) {
+                break;
+            }
+        }
+        assertEquals(62, scanned.size());
+        for (ZsetPair pair : scanned) {
+            assertEquals(true, map.containsKey(pair.member));
+            assertEquals(map.get(pair.member), pair.score, 0.1);
+        }
+    }
+
+    @Test public void zscanShouldScanThroughALargeSetWithCursoringAndAMatch() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        Map<String, Double> map = new HashMap<String, Double>();
+        for (int idx = 0; idx < 62; ++idx) {
+            ZsetPair pair = new ZsetPair(String.valueOf(idx), (double)idx);
+            redis.zadd(k, pair);
+            map.put(pair.member, pair.score);
+        }
+        Set<ZsetPair> scanned = new TreeSet<ZsetPair>(ZsetPair.comparator());
+        Long cursor = 0L;
+        while (true) {
+            ScanResult<Set<ZsetPair>> scan = redis.zscan(k, cursor, "match", "[0-9]");
+            scanned.addAll(scan.results);
+            cursor = scan.cursor;
+            if (cursor == 0L) {
+                break;
+            }
+        }
+        assertEquals(10, scanned.size());
+        for (ZsetPair pair : scanned) {
+            assertEquals(true, map.containsKey(pair.member));
+            assertEquals(map.get(pair.member), pair.score, 0.1);
+            assertEquals(true, 0 <= pair.score && pair.score <= 9);
+        }
+    }
+
+    @Test public void zscanShouldScanThroughALargeSetWithCursoringAndACountAndAMatch() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        Map<String, Double> map = new HashMap<String, Double>();
+        for (int idx = 0; idx < 62; ++idx) {
+            ZsetPair pair = new ZsetPair(String.valueOf(idx), (double)idx);
+            redis.zadd(k, pair);
+            map.put(pair.member, pair.score);
+        }
+        Set<ZsetPair> scanned = new TreeSet<ZsetPair>(ZsetPair.comparator());
+        Long cursor = 0L;
+        while (true) {
+            ScanResult<Set<ZsetPair>> scan = redis.zscan(k, cursor, "count", "4", "match", "[0-9]");
+            scanned.addAll(scan.results);
+            cursor = scan.cursor;
+            if (cursor == 0L) {
+                break;
+            }
+        }
+        assertEquals(10, scanned.size());
+        for (ZsetPair pair : scanned) {
+            assertEquals(true, map.containsKey(pair.member));
+            assertEquals(map.get(pair.member), pair.score, 0.1);
+            assertEquals(true, 0 <= pair.score && pair.score <= 9);
+        }
     }
 
 }
