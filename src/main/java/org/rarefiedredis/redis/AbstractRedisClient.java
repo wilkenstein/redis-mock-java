@@ -488,7 +488,7 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException{
+    @Override public Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, SyntaxErrorException, NotImplementedException {
         throw new NotImplementedException();
     }
 

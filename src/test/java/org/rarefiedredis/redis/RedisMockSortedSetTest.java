@@ -1292,4 +1292,364 @@ public class RedisMockSortedSetTest {
         assertEquals(true, range.contains(new ZsetPair(v5)));
     }
 
+    @Test public void zrevrangebyscoreShouldReturnTheRangeWithScores() throws WrongTypeException, SyntaxErrorException, NotFloatMinMaxException, NotIntegerException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v11 = "v11", v2 = "v2", v5 = "v5", v7 = "v7";
+        assertEquals(5L, (long)redis.zadd(k, 1.0, v1, 1.0, v11, 2.0, v2, 5.0, v5, 7.0, v7));
+        Set<ZsetPair> range = redis.zrevrangebyscore(k, "3", "1", "withscores");
+        assertEquals(3, range.size());
+        assertEquals(true, range.contains(new ZsetPair(v2, 2.0)));
+        assertEquals(true, range.contains(new ZsetPair(v11, 1.0)));
+        assertEquals(true, range.contains(new ZsetPair(v1, 1.0)));
+        range = redis.zrevrangebyscore(k, "8", "4");
+        assertEquals(2, range.size());
+        assertEquals(true, range.contains(new ZsetPair(v7, 7.0)));
+        assertEquals(true, range.contains(new ZsetPair(v5, 5.0)));
+    }
+
+    @Ignore("Pending") @Test public void zrevrangebyscoreShouldReturnTheRangeFromOffsetWithCount() {
+    }
+
+    @Ignore("Pending") @Test public void zrevrangebyscoreShouldReturnTheRangeForNegInfAndPosInfMinOrMax() {
+    }
+
+    @Test public void zrevrangebyscoreShouldReturnTheRangeForExclusiveMinOrMax() throws WrongTypeException, SyntaxErrorException, NotFloatMinMaxException, NotIntegerException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v11 = "v11", v2 = "v2", v5 = "v5", v7 = "v7";
+        assertEquals(5L, (long)redis.zadd(k, 1.0, v1, 1.0, v11, 2.0, v2, 5.0, v5, 7.0, v7));
+        Set<ZsetPair> range = redis.zrevrangebyscore(k, "5", "(1");
+        assertEquals(2, range.size());
+        assertEquals(true, range.contains(new ZsetPair(v5)));
+        assertEquals(true, range.contains(new ZsetPair(v2)));
+        range = redis.zrevrangebyscore(k, "(7", "1");
+        assertEquals(4, range.size());
+        assertEquals(true, range.contains(new ZsetPair(v5)));
+        assertEquals(true, range.contains(new ZsetPair(v2)));
+        assertEquals(true, range.contains(new ZsetPair(v11)));
+        assertEquals(true, range.contains(new ZsetPair(v1)));
+        range = redis.zrevrangebyscore(k, "(5", "(2");
+        assertEquals(0, range.size());
+    }
+
+    @Test public void zrevrankShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zrevrank(k, v);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrevrankShouldReturnNothingIfKeyDoesNotExist() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v2 = "v2";
+        redis.zadd(k, 1.0, v1);
+        assertEquals(null, redis.zrevrank(k, v2));
+    }
+
+    @Test public void zrevrankShouldGetTheReverseRankOfAMember() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v", v1 = "v1", v2 = "v2";
+        assertEquals(3L, (long)redis.zadd(k, 0, v, 2, v1, 4, v2));
+        assertEquals("zset", redis.type(k));
+        assertEquals(2L, (long)redis.zrevrank(k, v));
+        assertEquals(1L, (long)redis.zrevrank(k, v1));
+        assertEquals(0L, (long)redis.zrevrank(k, v2));
+    }
+
+    @Test public void zunionstoreShouldThrowAnErrorIfOneKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3";
+        String v = "v";
+        redis.set(k1, v);
+        redis.zadd(k2, 0, v);
+        redis.set(k3, v);
+        try {
+            redis.zunionstore(d, 2, k1, k2);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k1));
+            assertEquals("none", redis.type(d));
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zunionstore(d, 2, k2, k3);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k3));
+            assertEquals("none", redis.type(d));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zunionstoreShouldStoreAUnionOfTwoZsetsIntoDestination() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        assertEquals(3L, (long)redis.zadd(k1, 1, v1, 2, v2, 3, v3));
+        assertEquals(2L, (long)redis.zadd(k2, 1, v1, 3, v3));
+        assertEquals(3L, (long)redis.zunionstore(d, 2, k1, k2));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0L, -1L, "withscores");
+        assertEquals(3, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(6.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+        assertEquals(1L, (long)redis.zadd(k2, 2, v2));
+        assertEquals(2L, (long)redis.zrem(k2, v1, v3));
+        assertEquals(3L, (long)redis.zunionstore(d, 2, k1, k2));
+        range = redis.zrange(d, 0L, -1L, "withscores");
+        assertEquals(3, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(4.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+    }
+
+    @Test public void zunionstoreShouldStoreAUnionOfNZsetsIntoDestination() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3", k4 = "k4", k5 = "k5";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        assertEquals(3L, (long)redis.zadd(k1, 1, v1, 3, v3, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k2, 1, v1, 2, v2, 3, v3, 4, v4, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k3, 0, v1, 0, v2, 0, v3, 0, v4, 0, v5));
+        assertEquals(3L, (long)redis.zadd(k4, 3, v1, 2, v3, 1, v5));
+        assertEquals(5L, (long)redis.zadd(k5, 1, v1, 1, v2, 1, v3, 1, v4, 1, v5));
+        assertEquals(5L, (long)redis.zunionstore(d, 5, k1, k2, k3, k4, k5));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0L, -1L, "withscores");
+        assertEquals(5, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(5.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(6.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(9.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(12.0, pair.score, 0.1);
+        assertEquals(2L, (long)redis.zrem(k4, v1, v5));
+        assertEquals(5L, (long)redis.zunionstore(d, 5, k1, k2, k3, k4, k5));
+        range = redis.zrange(d, 0L, -1L, "withscores");
+        assertEquals(5, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(5.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(9.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(11.0, pair.score, 0.1);
+    }
+
+    @Test public void zunionstoreShouldWeightScoresInKeysIfTheWeightOptionIsGiven() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3", k4 = "k4", k5 = "k5";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        assertEquals(3L, (long)redis.zadd(k1, 1, v1, 3, v3, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k2, 1, v1, 2, v2, 3, v3, 4, v4, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k3, 0, v1, 0, v2, 0, v3, 0, v4, 0, v5));
+        assertEquals(3L, (long)redis.zadd(k4, 3, v1, 2, v3, 1, v5));
+        assertEquals(5L, (long)redis.zadd(k5, 1, v1, 1, v2, 1, v3, 1, v4, 1, v5));
+        assertEquals(5L, (long)redis.zunionstore(d, 5, k1, k2, k3, k4, k5, "weights", "1", "0", "0", "0"));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0L, -1L, "withscores");
+        assertEquals(5, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(4.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(6.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+        assertEquals(1L, (long)redis.zrem(k1, v1));
+        assertEquals(1L, (long)redis.zrem(k2, v1));
+        assertEquals(1L, (long)redis.zrem(k3, v1));
+        assertEquals(1L, (long)redis.zrem(k4, v1));
+        assertEquals(1L, (long)redis.zrem(k5, v1));
+        assertEquals(4L, (long)redis.zunionstore(d, 5, k1, k2, k3, k4, k5, "weights", "0", "2", "0", "3", "10"));
+        range = redis.zrange(d, 0L, -1L, "withscores");
+        assertEquals(4, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(14.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(18.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(22.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(23.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+    }
+
+    @Test public void zunionstoreShouldAggregateScoresInKeysIfTheAggregateOptionIsGiven() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3", k4 = "k4", k5 = "k5";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        assertEquals(3L, (long)redis.zadd(k1, 1, v1, 3, v3, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k2, 1, v1, 2, v2, 3, v3, 4, v4, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k3, 0, v1, 0, v2, 0, v3, 0, v4, 0, v5));
+        assertEquals(3L, (long)redis.zadd(k4, 3, v1, 2, v3, 1, v5));
+        assertEquals(5L, (long)redis.zadd(k5, 1, v1, 1, v2, 1, v3, 1, v4, 1, v5));
+        assertEquals(5L, (long)redis.zunionstore(d, 5, k1, k2, k3, k4, k5, "aggregate", "max"));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(5, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(4.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(5.0, pair.score, 0.1);
+        assertEquals(1L, (long)redis.zrem(k2, v4));
+        assertEquals(1L, (long)redis.zrem(k3, v4));
+        assertEquals(1L, (long)redis.zrem(k5, v4));
+        assertEquals(4L, (long)redis.zunionstore(d, 4, k1, k2, k4, k5, "aggregate", "min"));
+        assertEquals(4L, (long)redis.zcard(d));
+        range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(4, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+    }
+
+    @Test public void zunionstoreShouldWeightAndAggregateIfBothOptionsGiven() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String d = "d", k1 = "k1", k2 = "k2", k3 = "k3", k4 = "k4", k5 = "k5";
+        String v1 = "v1", v2 = "v2", v3 = "v3", v4 = "v4", v5 = "v5";
+        assertEquals(3L, (long)redis.zadd(k1, 1, v1, 3, v3, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k2, 1, v1, 2, v2, 3, v3, 4, v4, 5, v5));
+        assertEquals(5L, (long)redis.zadd(k3, 0, v1, 0, v2, 0, v3, 0, v4, 0, v5));
+        assertEquals(3L, (long)redis.zadd(k4, 3, v1, 2, v3, 1, v5));
+        assertEquals(5L, (long)redis.zadd(k5, 1, v1, 1, v2, 1, v3, 1, v4, 1, v5));
+        assertEquals(5L, (long)redis.zunionstore(d, 5, k1, k2, k3, k4, k5, "aggregate", "max", "weights", "0", "4", "9"));
+        assertEquals(true, redis.exists(d));
+        assertEquals("zset", redis.type(d));
+        Set<ZsetPair> range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(5, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(4.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(8.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(12.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(16.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(20.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+        assertEquals(5L, (long)redis.zunionstore(d, 4, k1, k2, k4, k5, "weights", "2", "2", "2", "2", "aggregate", "min"));
+        range = redis.zrange(d, 0, -1, "withscores");
+        assertEquals(5, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v4, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v5, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+    }
+
 }

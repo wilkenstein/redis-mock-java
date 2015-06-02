@@ -142,7 +142,7 @@ public interface IRedisSortedSet {
 
     Double zscore(String key, String member) throws WrongTypeException, NotImplementedException;
 
-    Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, NotImplementedException;
+    Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, SyntaxErrorException, NotImplementedException;
 
     ScanResult<Set<ZsetPair>> zscan(String key, long cursor, String ... options) throws WrongTypeException, NotImplementedException;
 

@@ -1432,6 +1432,9 @@ public final class RedisMock extends AbstractRedisMock {
             if (idx % 2 != 0) {
                 continue;
             }
+            if (scoresmembers[idx] instanceof Number) {
+                scoresmembers[idx] = ((Number)scoresmembers[idx]).doubleValue();
+            }
             if (!(scoresmembers[idx] instanceof Double)) {
                 throw new NotFloatException();
             }
@@ -1515,7 +1518,7 @@ public final class RedisMock extends AbstractRedisMock {
                     throw new SyntaxErrorException();
                 }
                 aggregate = options[i + 1];
-                ++i;
+                i += 2;
             }
             else {
                 throw new SyntaxErrorException();
@@ -1853,9 +1856,103 @@ public final class RedisMock extends AbstractRedisMock {
         return revRange;
     }
 
+    @Override public synchronized Long zrevrank(final String key, final String member) throws WrongTypeException {
+        checkType(key, "zset");
+        Long rank = zrank(key, member);
+        if (rank == null) {
+            return null;
+        }
+        return zcard(key) - rank - 1;
+    }
+
     @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {
         checkType(key, "zset");
         return zsetCache.getScore(key, member);
+    }
+
+    @Override public synchronized Long zunionstore(final String destination, final int numkeys, final String ... options) throws WrongTypeException, SyntaxErrorException {
+        if (exists(destination)) {
+            del(destination);
+        }
+        List<String> keys = new ArrayList<String>(numkeys);
+        Map<String, Double> weights = new HashMap<String, Double>();
+        String aggregate = "sum";
+        if (options.length < numkeys) {
+            throw new SyntaxErrorException();
+        }
+        int i;
+        for (i = 0; i < numkeys; ++i) {
+            checkType(options[i], "zset");
+            keys.add(options[i]);
+        }
+        i = numkeys;
+        while (i < options.length) {
+            if (options[i] == null) {
+                continue;
+            }
+            if ("weights".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                int ki = 0;
+                ++i;
+                while (i < options.length && !("aggregate".equals(options[i]))) {
+                    weights.put(keys.get(ki), Double.valueOf(options[i]));
+                    ++ki;
+                    ++i;
+                }
+            }
+            else if ("aggregate".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                aggregate = options[i + 1];
+                i += 2;
+            }
+            else {
+                throw new SyntaxErrorException();
+            }
+        }
+        String key = keys.get(0);
+        Set<ZsetPair> range = zrange(key, 0, -1, "withscores");
+        Map<String, Double> rangeMap = new HashMap<String, Double>();
+        for (ZsetPair pair : range) {
+            if (weights.containsKey(key)) {
+                pair.score *= weights.get(key);
+            }
+            rangeMap.put(pair.member, pair.score);
+        }
+        for (String k : keys.subList(1, numkeys)) {
+            for (String m : zsetCache.get(k)) {
+                ZsetPair pair = new ZsetPair(m, zsetCache.getScore(k, m));
+                Double score = rangeMap.get(m);
+                if (weights.containsKey(k)) {
+                    pair.score *= weights.get(k);
+                }
+                if ("min".equals(aggregate)) {
+                    if (score != null) {
+                        pair.score = Math.min(pair.score, score);
+                    }
+                }
+                else if ("max".equals(aggregate)) {
+                    if (score != null) {
+                        pair.score = Math.max(pair.score, score);
+                    }
+                }
+                else { // == sum
+                    if (score != null) {
+                        pair.score += score;
+                    }
+                }
+                rangeMap.put(pair.member, pair.score);
+            }
+        }
+        Long count = 0L;
+        for (String member : rangeMap.keySet()) {
+            zadd(destination, new ZsetPair(member, rangeMap.get(member)));
+            ++count;
+        }
+        return count;
     }
 
 }
