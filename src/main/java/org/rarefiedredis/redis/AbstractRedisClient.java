@@ -468,7 +468,7 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException {
+    @Override public Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotFloatMinMaxException, NotImplementedException {
         throw new NotImplementedException();
     }
 

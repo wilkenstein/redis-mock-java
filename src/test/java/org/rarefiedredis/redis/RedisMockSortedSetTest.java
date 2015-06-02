@@ -970,4 +970,126 @@ public class RedisMockSortedSetTest {
         assertEquals(0.0, (double)redis.zscore(k, d), 0.1);
     }
 
+    @Test public void zremrangebyrankShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zremrangebyrank(k, 0L, -1L);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zremrangebyrankShouldRemoveTheRangeByRank() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String a = "a", aa = "aa", b = "b", c = "c", cc = "cc", ccc = "ccc", d = "d";
+        assertEquals(7L, (long)redis.zadd(k, 0.0, a, 1.0, d, 4.0, ccc, 2.0, b, 0.0, aa, 0.0, cc, 3.0, c));
+        assertEquals(7L, (long)redis.zremrangebyrank(k, 0L, -1L));
+        assertEquals(0L, (long)redis.zcard(k));
+        assertEquals(7L, (long)redis.zadd(k, 0.0, a, 1.0, d, 4.0, ccc, 2.0, b, 0.0, aa, 0.0, cc, 3.0, c));
+        assertEquals(3L, (long)redis.zremrangebyrank(k, 0L, 2L));
+        assertEquals(4L, (long)redis.zcard(k));
+        assertEquals(null, redis.zscore(k, a));
+        assertEquals(null, redis.zscore(k, aa));
+        assertEquals(null, redis.zscore(k, cc));
+        assertEquals(2.0, (double)redis.zscore(k, b), 0.1);
+        assertEquals(3L, (long)redis.zadd(k, 0.0, aa, 0.0, a, 0.0, cc));
+        assertEquals(3L, (long)redis.zremrangebyrank(k, -3L, -1L));
+        assertEquals(4L, (long)redis.zcard(k));
+        assertEquals(null, redis.zscore(k, b));
+        assertEquals(null, redis.zscore(k, c));
+        assertEquals(null, redis.zscore(k, ccc));
+        assertEquals(0.0, (double)redis.zscore(k, a), 0.1);
+        assertEquals(1.0, (double)redis.zscore(k, d), 0.1);
+        assertEquals(3L, (long)redis.zadd(k, 2.0, b, 4.0, ccc, 3.0, c));
+        assertEquals(2L, (long)redis.zremrangebyrank(k, 3L, 4L));
+        assertEquals(5L, (long)redis.zcard(k));
+        assertEquals(null, redis.zscore(k, d));
+        assertEquals(null, redis.zscore(k, b));
+        assertEquals(4.0, (double)redis.zscore(k, ccc), 0.1);
+        assertEquals(0.0, (double)redis.zscore(k, a), 0.1);
+    }
+
+    @Test public void zremrangebyscoreShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zremrangebyscore(k, "0", "1");
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zremrangebyscoreShouldThrowAnErrorForInvalidMinOrMax() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.zadd(k, 0.0, v);
+        try {
+            redis.zremrangebyscore(k, "asdf98", "23");
+        }
+        catch (NotFloatMinMaxException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zremrangebyscore(k, "1", "blerg");
+        }
+        catch (NotFloatMinMaxException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zremrangebyscoreShouldRemoveTheRangeByScore() throws WrongTypeException, SyntaxErrorException, NotFloatException, NotFloatMinMaxException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String a = "a", aa = "aa", b = "b", c = "c", cc = "cc", ccc = "ccc", d = "d";
+        assertEquals(7L, (long)redis.zadd(k, 0.0, a, 1.0, d, 4.0, ccc, 2.0, b, 0.0, aa, 0.0, cc, 3.0, c));
+        assertEquals(7L, (long)redis.zremrangebyscore(k, "0", "5"));
+        assertEquals(0L, (long)redis.zcard(k));
+        assertEquals(7L, (long)redis.zadd(k, 0.0, a, 1.0, d, 4.0, ccc, 2.0, b, 0.0, aa, 0.0, cc, 3.0, c));
+        assertEquals(3L, (long)redis.zremrangebyscore(k, "0", "0"));
+        assertEquals(4L, (long)redis.zcard(k));
+        assertEquals(null, redis.zscore(k, a));
+        assertEquals(null, redis.zscore(k, aa));
+        assertEquals(null, redis.zscore(k, cc));
+        assertEquals(1.0, (double)redis.zscore(k, d), 0.1);
+        assertEquals(3L, (long)redis.zadd(k, 0.0, aa, 0.0, a, 0.0, cc));
+        assertEquals(4L, (long)redis.zremrangebyscore(k, "1", "4"));
+        assertEquals(3L, (long)redis.zcard(k));
+        assertEquals(null, redis.zscore(k, d));
+        assertEquals(null, redis.zscore(k, b));
+        assertEquals(null, redis.zscore(k, c));
+        assertEquals(null, redis.zscore(k, ccc));
+        assertEquals(0.0, (double)redis.zscore(k, cc), 0.1);
+        assertEquals(4L, (long)redis.zadd(k, 1.0, d, 2.0, b, 3.0, c, 4.0, ccc));
+        assertEquals(2L, (long)redis.zremrangebyscore(k, "(1", "(4"));
+        assertEquals(5L, (long)redis.zcard(k));
+        assertEquals(null, redis.zscore(k, b));
+        assertEquals(null, redis.zscore(k, c));
+        assertEquals(1.0, (double)redis.zscore(k, d), 0.1);
+        assertEquals(4.0, (double)redis.zscore(k, ccc), 0.1);
+    }
+
 }

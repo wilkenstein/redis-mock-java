@@ -82,7 +82,7 @@ public interface IRedisSortedSet {
 
     Long zremrangebyrank(String key, long start, long stop) throws WrongTypeException, NotImplementedException;
 
-    Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotImplementedException;
+    Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotFloatMinMaxException, NotImplementedException;
 
     Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException;
 
