@@ -460,7 +460,7 @@ public abstract class AbstractRedisClient implements IRedisClient {
         throw new NotImplementedException();
     }
 
-    @Override public Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException {
+    @Override public Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException {
         throw new NotImplementedException();
     }
 

@@ -26,6 +26,7 @@ import org.rarefiedredis.redis.NotImplementedException;
 import org.rarefiedredis.redis.IndexOutOfRangeException;
 import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.DiscardWithoutMultiException;
+import org.rarefiedredis.redis.NotValidStringRangeItemException;
 
 import java.util.Collection;
 import java.util.List;
@@ -887,7 +888,7 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
 
     // multi & watch are both abstract.
 
-    @Override public Long zadd(final String key, final ZsetPair scoremember, final ZsetPair ... scoresmembers) {
+    @Override public Long zadd(final String key, final ZsetPair scoremember, final ZsetPair ... scoresmembers) throws WrongTypeException {
         if (scoremember == null) {
             return null;
         }
@@ -902,10 +903,17 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
             }
             sms.put(pair.member, pair.score);
         }
-        return (Long)command("zadd", key, sms);
+        Object ret = command("zadd", key, sms);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zadd(final String key, final double score, final String member, final Object ... scoresmembers) {
+    @Override public Long zadd(final String key, final double score, final String member, final Object ... scoresmembers) throws WrongTypeException, SyntaxErrorException, NotFloatException {
         if (scoresmembers.length == 0) {
             return (Long)command("zadd", key, score, member);
         }
@@ -923,30 +931,74 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
             }
             sms.put((String)scoresmembers[idx + 1], (Double)scoresmembers[idx]);
         }
-        return (Long)command("zadd", key, sms);
+        Object ret = command("zadd", key, sms);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        if (ret instanceof SyntaxErrorException) {
+            throw new SyntaxErrorException();
+        }
+        if (ret instanceof NotFloatException) {
+            throw new NotFloatException();
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zcard(String key) {
-        return (Long)command("zcard", key);
+    @Override public Long zcard(String key) throws WrongTypeException {
+        Object ret = command("zcard", key);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zcount(String key, double min, double max) {
-        return (Long)command("zcount", key, min, max);
+    @Override public Long zcount(String key, double min, double max) throws WrongTypeException {
+        Object ret = command("zcount", key, min, max);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        return (Long)ret;
     }
 
-    @Override public String zincrby(String key, double increment, String member) {
-        return String.valueOf((Double)command("zincrby", key, increment, member));
+    @Override public String zincrby(String key, double increment, String member) throws WrongTypeException {
+        Object ret = command("zincrby", key, increment, member);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        return String.valueOf((Double)ret);
     }
 
-    @Override public Long zinterstore(String destination, int numkeys, String ... options) {
+    @Override public Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, SyntaxErrorException {
         String[] sets = new String[numkeys];
         for (int i = 0; i < numkeys; ++i) {
             sets[i] = options[i];
         }
-        return (Long)command("zinterstore", destination, sets);
+        Object ret = command("zinterstore", destination, sets);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        if (ret instanceof SyntaxErrorException) {
+            throw new SyntaxErrorException();
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zlexcount(String key, String min, String max) {
+    @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException {
         return (Long)command("zlexcount", key, min, max);
     }
 

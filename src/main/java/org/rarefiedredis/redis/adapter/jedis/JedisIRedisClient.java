@@ -25,6 +25,7 @@ import org.rarefiedredis.redis.NotImplementedException;
 import org.rarefiedredis.redis.IndexOutOfRangeException;
 import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.DiscardWithoutMultiException;
+import org.rarefiedredis.redis.NotValidStringRangeItemException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -148,6 +149,9 @@ public final class JedisIRedisClient extends AbstractJedisIRedisClient {
             }
             else if (msg.contains("wrong number of arguments")) {
                 ret = new ArgException(e.getCause());
+            }
+            else if (msg.contains("min or max not valid string range item")) {
+                ret = new NotValidStringRangeItemException();
             }
         }
         finally {

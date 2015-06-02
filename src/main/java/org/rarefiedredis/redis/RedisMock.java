@@ -1765,6 +1765,25 @@ public final class RedisMock extends AbstractRedisMock {
         return range;
     }
 
+    @Override public synchronized Long zrank(final String key, final String member) throws WrongTypeException {
+        checkType(key, "zset");
+        if (!zsetCache.exists(key)) {
+            return null;
+        }
+        if (zsetCache.getScore(key, member) == null) {
+            return null;
+        }
+        Set<String> members = zsetCache.get(key);
+        long rank = 0L;
+        for (String m : members) {
+            if (m.equals(member)) {
+                break;
+            }
+            ++rank;
+        }
+        return rank;
+    }
+
     @Override public synchronized Long zrem(final String key, final String member, final String ... members) throws WrongTypeException {
         checkType(key, "zset");
         Long count = 0L;
@@ -1776,6 +1795,14 @@ public final class RedisMock extends AbstractRedisMock {
             del(key);
         }
         return count;
+    }
+
+    @Override public synchronized Long zremrangebylex(final String key, final String min, final String max) throws WrongTypeException, NotValidStringRangeItemException {
+        Set<ZsetPair> range = zrangebylex(key, min, max);
+        for (ZsetPair pair : range) {
+            zrem(key, pair.member);
+        }
+        return (long)range.size();
     }
 
     @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {

@@ -78,7 +78,7 @@ public interface IRedisSortedSet {
 
     Long zrem(String key, String member, String ... members) throws WrongTypeException, NotImplementedException;
 
-    Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotImplementedException;
+    Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException, NotImplementedException;
 
     Long zremrangebyrank(String key, long start, long stop) throws WrongTypeException, NotImplementedException;
 
