@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Comparator;
 
 public interface IRedisSortedSet {
 
@@ -48,6 +49,55 @@ public interface IRedisSortedSet {
             return map;
         }
 
+        public static Comparator<ZsetPair> comparator() {
+            return new Comparator<ZsetPair>() {
+                @Override public int compare(ZsetPair a, ZsetPair b) {
+                    if (a == null) {
+                        if (b == null) {
+                            return 0;
+                        }
+                        return 1;
+                    }
+                    if (b == null) {
+                        return -1;
+                    }
+                    if (a.score != null && b.score != null) {
+                        if (a.score < b.score) {
+                            return -1;
+                        }
+                        if (a.score > b.score) {
+                            return 1;
+                        }
+                    }
+                    return a.member.compareTo(b.member);
+                }
+            };
+        }
+
+        public static Comparator<ZsetPair> descendingComparator() {
+            return new Comparator<ZsetPair>() {
+                @Override public int compare(ZsetPair a, ZsetPair b) {
+                    if (a == null) {
+                        if (b == null) {
+                            return 0;
+                        }
+                        return 1;
+                    }
+                    if (b == null) {
+                        return -1;
+                    }
+                    if (a.score != null && b.score != null) {
+                        if (a.score < b.score) {
+                            return 1;
+                        }
+                        if (a.score > b.score) {
+                            return -1;
+                        }
+                    }
+                    return b.member.compareTo(a.member);
+                }
+            };
+        }
     }
 
     Long zadd(String key, ZsetPair scoremember, ZsetPair ... scoresmembers) throws WrongTypeException, NotImplementedException;
@@ -86,7 +136,7 @@ public interface IRedisSortedSet {
 
     Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) throws WrongTypeException, NotImplementedException;
 
-    Set<ZsetPair> zrevrangebyscore(String key, String max, String min, String ... options) throws WrongTypeException, NotImplementedException;
+    Set<ZsetPair> zrevrangebyscore(String key, String max, String min, String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException, NotImplementedException;
 
     Long zrevrank(String key, String member) throws WrongTypeException, NotImplementedException;
 

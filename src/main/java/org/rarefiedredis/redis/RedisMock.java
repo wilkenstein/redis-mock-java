@@ -1566,13 +1566,14 @@ public final class RedisMock extends AbstractRedisMock {
     @Override public synchronized Set<ZsetPair> zrange(final String key, long start, long stop, final String ... options) throws WrongTypeException {
         checkType(key, "zset");
         boolean withscores = false;
+        long card = zcard(key);
         if (start < 0) {
-            start = Math.max(zcard(key) + start, 0);
+            start = Math.max(card + start, 0);
         }
         if (stop < 0) {
-            stop = zcard(key) + stop;
+            stop = card + stop;
         }
-        Set<ZsetPair> range = new HashSet<ZsetPair>();
+        Set<ZsetPair> range = new TreeSet<ZsetPair>(ZsetPair.comparator());
         if (!zsetCache.exists(key)) {
             return range;
         }
@@ -1589,7 +1590,6 @@ public final class RedisMock extends AbstractRedisMock {
                 break;
             }
             ZsetPair pair = new ZsetPair(member);
-            Double score = zsetCache.getScore(key, member);
             if (withscores) {
                 pair.score = zsetCache.getScore(key, member);
             }
@@ -1607,11 +1607,7 @@ public final class RedisMock extends AbstractRedisMock {
         if (max.charAt(0) != '(' && max.charAt(0) != '[' && max.charAt(0) != '-' && max.charAt(0) != '+') {
             throw new NotValidStringRangeItemException();
         }
-        Set<ZsetPair> range = new TreeSet<ZsetPair>(new Comparator<ZsetPair>() {
-                @Override public int compare(ZsetPair a, ZsetPair b) {
-                    return a.member.compareTo(b.member);
-                }
-            });
+        Set<ZsetPair> range = new TreeSet<ZsetPair>(ZsetPair.comparator());
         if (!zsetCache.exists(key)) {
             return range;
         }
@@ -1648,11 +1644,7 @@ public final class RedisMock extends AbstractRedisMock {
 
     @Override public synchronized Set<ZsetPair> zrevrangebylex(final String key, final String max, final String min, final String ... options) throws WrongTypeException, NotValidStringRangeItemException {
         Set<ZsetPair> range = zrangebylex(key, min, max, options);
-        Set<ZsetPair> revrange = new TreeSet<ZsetPair>(new Comparator<ZsetPair>() {
-                @Override public int compare(ZsetPair a, ZsetPair b) {
-                    return b.member.compareTo(a.member);
-                }
-            });
+        Set<ZsetPair> revrange = new TreeSet<ZsetPair>(ZsetPair.descendingComparator());
         revrange.addAll(range);
         return revrange;
     }
@@ -1720,11 +1712,7 @@ public final class RedisMock extends AbstractRedisMock {
                 }
             }
         }
-        Set<ZsetPair> range = new TreeSet<ZsetPair>(new Comparator<ZsetPair>() {
-                @Override public int compare(ZsetPair a, ZsetPair b) {
-                    return a.member.compareTo(b.member);
-                }
-            });
+        Set<ZsetPair> range = new TreeSet<ZsetPair>(ZsetPair.comparator());
         if (!zsetCache.exists(key)) {
             return range;
         }
@@ -1849,6 +1837,20 @@ public final class RedisMock extends AbstractRedisMock {
         catch (Exception e) { // Should never get here.
         }
         return null;
+    }
+
+    @Override public synchronized Set<ZsetPair> zrevrange(final String key, final long start, final long stop, final String ... options) throws WrongTypeException {
+        Set<ZsetPair> range = zrange(key, start, stop, options);
+        Set<ZsetPair> revRange = new TreeSet<ZsetPair>(ZsetPair.descendingComparator());
+        revRange.addAll(range);
+        return revRange;
+    }
+
+    @Override public synchronized Set<ZsetPair> zrevrangebyscore(final String key, final String max, final String min, final String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException {
+        Set<ZsetPair> range = zrangebyscore(key, min, max, options);
+        Set<ZsetPair> revRange = new TreeSet(ZsetPair.descendingComparator());
+        revRange.addAll(range);
+        return revRange;
     }
 
     @Override public synchronized Double zscore(final String key, final String member) throws WrongTypeException {

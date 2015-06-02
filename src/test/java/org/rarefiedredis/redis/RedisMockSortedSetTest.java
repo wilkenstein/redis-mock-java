@@ -1092,4 +1092,204 @@ public class RedisMockSortedSetTest {
         assertEquals(4.0, (double)redis.zscore(k, ccc), 0.1);
     }
 
+    @Test public void zrevrangeShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zrevrange(k, 0L, 1L);
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrevrangeShouldReturnAnEmptySetIfKeyDoesNotExist() throws WrongTypeException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        assertEquals(0, redis.zrevrange(k, 0L, 1L).size());
+        assertEquals(0, redis.zrevrange(k, 5L, 10L).size());
+    }
+
+    @Test public void zrevrangeShouldReturnTheRange() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        assertEquals(3L, (long)redis.zadd(k, 1.0, v1, 2.0, v2, 3.0, v3));
+        assertEquals(2, redis.zrevrange(k, 0L, 1L).size());
+        assertEquals(2, redis.zrevrange(k, 1L, 3L).size());
+        assertEquals(0, redis.zrevrange(k, 4L, 5L).size());
+        Set<ZsetPair> range = redis.zrevrange(k, 0L, 2L);
+        assertEquals(3, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        assertEquals(v3, iter.next().member);
+        assertEquals(v2, iter.next().member);
+        assertEquals(v1, iter.next().member);
+    }
+
+    @Test public void zrevrangeShouldReturnTheRangeForNegativeNumbers() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        assertEquals(3L, (long)redis.zadd(k, 1.0, v1, 2.0, v2, 3.0, v3));
+        assertEquals(2L, redis.zrevrange(k, -3L, -2L).size());
+        assertEquals(2L, redis.zrevrange(k, -2L, 3L).size());
+        assertEquals(0L, redis.zrevrange(k, 4L, 5L).size());
+        Set<ZsetPair> range = redis.zrevrange(k, 0L, -1L);
+        assertEquals(3, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        assertEquals(v3, iter.next().member);
+        assertEquals(v2, iter.next().member);
+        assertEquals(v1, iter.next().member);
+    }
+
+    @Test public void zrevrangeShouldReturnTheRangeWithscores() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v2 = "v2", v3 = "v3";
+        assertEquals(3L, (long)redis.zadd(k, 1.0, v1, 2.0, v2, 3.0, v3));
+        assertEquals(2, redis.zrange(k, 1L, 3L, "withscores").size());
+        Set<ZsetPair> range = redis.zrevrange(k, 0L, 2L, "withscores");
+        assertEquals(3, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals(v3, pair.member);
+        assertEquals(3.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v2, pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals(v1, pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+    }
+
+    @Ignore("Pending") @Test public void zrevrangeShouldReverseOrderElementsWithTheSameScore() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+    }
+
+    @Test public void zrevrangebyscoreShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        redis.set(k, v);
+        try {
+            redis.zrevrangebyscore(k, "0", "1");
+        }
+        catch (WrongTypeException e) {
+            assertEquals(v, redis.get(k));
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrevrangebyscoreShouldThrowAnErrorIfMinIsNotAFloat() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.zadd(k, 0.0, v);
+        try {
+            redis.zrevrangebyscore(k, "na", "1");
+        }
+        catch (NotFloatMinMaxException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrevrangebyscoreShouldThrowAnErrorIfMaxIsNotAFloat() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.zadd(k, 0.0, v);
+        try {
+            redis.zrevrangebyscore(k, "0", "(blerg");
+        }
+        catch (NotFloatMinMaxException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrevrangebyscoreShouldThrowAnErrorIfOptionsAreInvalid() throws WrongTypeException, SyntaxErrorException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "key";
+        String v = "v";
+        redis.zadd(k, 0.0, v);
+        try {
+            redis.zrevrangebyscore(k, "0", "1", "limit");
+        }
+        catch (SyntaxErrorException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zrevrangebyscore(k, "0", "1", "limit", "1");
+        }
+        catch (SyntaxErrorException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zrevrangebyscore(k, "0", "1", "limit", "1", "bah");
+        }
+        catch (NotIntegerException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+        }
+        catch (Exception e) {
+            assertEquals(false, true);
+        }
+        try {
+            redis.zrevrangebyscore(k, "0", "1", "limit", "hello", "2");
+        }
+        catch (NotIntegerException e) {
+            assertEquals(0.0, redis.zscore(k, v), 0.01);
+            return;
+        }
+        catch (Exception e) {
+        }
+        assertEquals(false, true);
+    }
+
+    @Test public void zrevrangebyscoreShouldReturnAnEmptySetIfKeyDoesNotExist() throws WrongTypeException, SyntaxErrorException, NotFloatMinMaxException, NotIntegerException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v = "v";
+        assertEquals(0, redis.zrevrangebyscore(k, "0", "1").size());
+        assertEquals(0, redis.zrevrangebyscore(k, "5", "10").size());
+    }
+
+    @Test public void zrevrangebyscoreShouldReturnTheRange() throws WrongTypeException, SyntaxErrorException, NotFloatMinMaxException, NotIntegerException, NotFloatException {
+        RedisMock redis = new RedisMock();
+        String k = "k";
+        String v1 = "v1", v11 = "v11", v2 = "v2", v5 = "v5", v7 = "v7";
+        assertEquals(5L, (long)redis.zadd(k, 1.0, v1, 1.0, v11, 2.0, v2, 5.0, v5, 7.0, v7));
+        Set<ZsetPair> range = redis.zrevrangebyscore(k, "3", "1");
+        assertEquals(3, range.size());
+        assertEquals(true, range.contains(new ZsetPair(v2)));
+        assertEquals(true, range.contains(new ZsetPair(v11)));
+        assertEquals(true, range.contains(new ZsetPair(v1)));
+        range = redis.zrevrangebyscore(k, "8", "4");
+        assertEquals(2, range.size());
+        assertEquals(true, range.contains(new ZsetPair(v7)));
+        assertEquals(true, range.contains(new ZsetPair(v5)));
+    }
+
 }
