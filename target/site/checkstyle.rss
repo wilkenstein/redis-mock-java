@@ -25,8 +25,8 @@ under the License.
     <language>en-us</language>
     <copyright>&#169;2015</copyright>
     <item>
-      <title>File: 41,
-             Errors: 3047,
+      <title>File: 42,
+             Errors: 2723,
              Warnings: 0,
              Infos: 0
       </title>
@@ -55,7 +55,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  342
+                  427
                 </td>
               </tr>
                           <tr>
@@ -69,7 +69,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  63
+                  74
                 </td>
               </tr>
                           <tr>
@@ -111,7 +111,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  6
+                  7
                 </td>
               </tr>
                           <tr>
@@ -126,20 +126,6 @@ under the License.
                 </td>
                 <td>
                   1
-                </td>
-              </tr>
-                          <tr>
-                <td>
-                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.IRedis.java">org/rarefiedredis/redis/IRedis.java</a>
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  0
-                </td>
-                <td>
-                  3
                 </td>
               </tr>
                           <tr>
@@ -181,7 +167,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  512
+                  566
                 </td>
               </tr>
                           <tr>
@@ -195,7 +181,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  489
+                  494
                 </td>
               </tr>
                           <tr>
@@ -293,7 +279,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  40
+                  39
                 </td>
               </tr>
                           <tr>
@@ -308,6 +294,20 @@ under the License.
                 </td>
                 <td>
                   156
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotFloatMinMaxException.java">org/rarefiedredis/redis/NotFloatMinMaxException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
                 </td>
               </tr>
                           <tr>
@@ -573,7 +573,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  492
+                  10
                 </td>
               </tr>
                           <tr>
@@ -592,6 +592,20 @@ under the License.
               </tr>
                           <tr>
                 <td>
+                  <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.NotValidStringRangeItemException.java">org/rarefiedredis/redis/NotValidStringRangeItemException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  1
+                </td>
+              </tr>
+                          <tr>
+                <td>
                   <a href="http://maven.apache.org/checkstyle.html#org.rarefiedredis.redis.adapter.jedis.JedisIRedisClient.java">org/rarefiedredis/redis/adapter/jedis/JedisIRedisClient.java</a>
                 </td>
                 <td>
@@ -601,7 +615,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  47
+                  49
                 </td>
               </tr>
                           <tr>

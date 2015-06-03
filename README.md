@@ -72,6 +72,9 @@ $ mvn test
 
 ## Versions
 
+* 0.0.15
+  - Implement all sorted set commands.
+  - Fix the JedisIRedisClient with sorted set commands.
 * 0.0.14
   - Fix the JedisIRedisClient entirely to disallow watches with pools.
 * 0.0.13
