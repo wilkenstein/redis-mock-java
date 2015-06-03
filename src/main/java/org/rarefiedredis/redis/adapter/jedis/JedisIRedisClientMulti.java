@@ -82,6 +82,10 @@ public final class JedisIRedisClientMulti extends AbstractJedisIRedisClient {
                     if (parameterTypes[idx].equals(Double.class)) {
                         parameterTypes[idx] = double.class;
                     }
+                    // Convert implementations into their interfaces where appropriate.
+                    if (parameterTypes[idx].equals(HashMap.class)) {
+                        parameterTypes[idx] = Map.class;
+                    }
                 }
             }
             synchronized (this) {

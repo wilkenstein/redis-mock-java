@@ -7,6 +7,7 @@ import redis.clients.jedis.BitOP;
 import redis.clients.jedis.BitPosParams;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.Tuple;
+import redis.clients.jedis.ZParams;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
 
 import org.rarefiedredis.redis.IRedisClient;
@@ -23,6 +24,7 @@ import org.rarefiedredis.redis.SyntaxErrorException;
 import org.rarefiedredis.redis.NotFloatHashException;
 import org.rarefiedredis.redis.NotIntegerHashException;
 import org.rarefiedredis.redis.NotImplementedException;
+import org.rarefiedredis.redis.NotFloatMinMaxException;
 import org.rarefiedredis.redis.IndexOutOfRangeException;
 import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.DiscardWithoutMultiException;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -498,6 +501,9 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
             strings[idx + 1] = elements[idx];
         }
         Object ret = command("rpush", key, strings);
+        if (ret == null) {
+            return null;
+        }
         if (ret instanceof WrongTypeException) {
             throw (WrongTypeException)ret;
         }
@@ -892,9 +898,6 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
         if (scoremember == null) {
             return null;
         }
-        if (scoresmembers.length == 0) {
-            return (Long)command("zadd", key, scoremember.score, scoremember.member);
-        }
         Map<String, Double> sms = new HashMap<String, Double>();
         sms.put(scoremember.member, scoremember.score);
         for (ZsetPair pair : scoresmembers) {
@@ -904,18 +907,15 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
             sms.put(pair.member, pair.score);
         }
         Object ret = command("zadd", key, sms);
-        if (ret == null) {
-            return null;
-        }
         if (ret instanceof WrongTypeException) {
-            throw new WrongTypeException();
+            throw (WrongTypeException)ret;
         }
         return (Long)ret;
     }
 
     @Override public Long zadd(final String key, final double score, final String member, final Object ... scoresmembers) throws WrongTypeException, SyntaxErrorException, NotFloatException {
-        if (scoresmembers.length == 0) {
-            return (Long)command("zadd", key, score, member);
+        if (scoresmembers.length % 2 != 0) {
+            throw new SyntaxErrorException();
         }
         Map<String, Double> sms = new HashMap<String, Double>();
         sms.put(member, score);
@@ -923,8 +923,11 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
             if (idx % 2 != 0) {
                 continue;
             }
+            if (scoresmembers[idx] instanceof Number) {
+                scoresmembers[idx] = ((Number)scoresmembers[idx]).doubleValue();
+            }
             if (!(scoresmembers[idx] instanceof Double)) {
-                continue;
+                throw new NotFloatException();
             }
             if (!(scoresmembers[idx + 1] instanceof String)) {
                 scoresmembers[idx + 1] = scoresmembers[idx + 1].toString();
@@ -932,81 +935,142 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
             sms.put((String)scoresmembers[idx + 1], (Double)scoresmembers[idx]);
         }
         Object ret = command("zadd", key, sms);
-        if (ret == null) {
-            return null;
-        }
         if (ret instanceof WrongTypeException) {
-            throw new WrongTypeException();
+            throw (WrongTypeException)ret;
         }
         if (ret instanceof SyntaxErrorException) {
-            throw new SyntaxErrorException();
+            throw (SyntaxErrorException)ret;
         }
         if (ret instanceof NotFloatException) {
-            throw new NotFloatException();
+            throw (NotFloatException)ret;
         }
         return (Long)ret;
     }
 
     @Override public Long zcard(String key) throws WrongTypeException {
         Object ret = command("zcard", key);
-        if (ret == null) {
-            return null;
-        }
         if (ret instanceof WrongTypeException) {
-            throw new WrongTypeException();
+            throw (WrongTypeException)ret;
         }
         return (Long)ret;
     }
 
     @Override public Long zcount(String key, double min, double max) throws WrongTypeException {
         Object ret = command("zcount", key, min, max);
-        if (ret == null) {
-            return null;
-        }
         if (ret instanceof WrongTypeException) {
-            throw new WrongTypeException();
+            throw (WrongTypeException)ret;
         }
         return (Long)ret;
     }
 
     @Override public String zincrby(String key, double increment, String member) throws WrongTypeException {
         Object ret = command("zincrby", key, increment, member);
-        if (ret == null) {
-            return null;
-        }
         if (ret instanceof WrongTypeException) {
-            throw new WrongTypeException();
+            throw (WrongTypeException)ret;
         }
         return String.valueOf((Double)ret);
     }
 
     @Override public Long zinterstore(String destination, int numkeys, String ... options) throws WrongTypeException, SyntaxErrorException {
+        if (options.length < numkeys) {
+            throw new SyntaxErrorException();
+        }
         String[] sets = new String[numkeys];
-        for (int i = 0; i < numkeys; ++i) {
+        int i;
+        for (i = 0; i < numkeys; ++i) {
             sets[i] = options[i];
         }
-        Object ret = command("zinterstore", destination, sets);
-        if (ret == null) {
-            return null;
+        i = numkeys;
+        ZParams params = null;
+        List<Double> weights = new ArrayList<Double>();
+        String aggregate = null;
+        while (i < options.length) {
+            if (options[i] == null) {
+                continue;
+            }
+            if ("weights".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                if (params == null) {
+                    params = new ZParams();
+                }
+                int ki = 0;
+                ++i;
+                while (i < options.length && !("aggregate".equals(options[i]))) {
+                    weights.add(Double.valueOf(options[i]));
+                    ++ki;
+                    ++i;
+                }
+            }
+            else if ("aggregate".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                aggregate = options[i + 1];
+                i += 2;
+            }
+            else {
+                throw new SyntaxErrorException();
+            }
+        }
+        if (!weights.isEmpty()) {
+            if (params == null) {
+                params = new ZParams();
+            }
+            double[] weightsArr = new double[weights.size()];
+            Double[] weightsToArr = weights.toArray(new Double[weights.size()]);
+            for (int j = 0; j < weightsToArr.length; ++j) {
+                weightsArr[j] = weightsToArr[j];
+            }
+            params = params.weightsByDouble(weightsArr);
+        }
+        if (aggregate != null) {
+            if (params == null) {
+                params = new ZParams();
+            }
+            if ("min".equals(aggregate)) {
+                params = params.aggregate(ZParams.Aggregate.MIN);
+            }
+            else if ("max".equals(aggregate)) {
+                params = params.aggregate(ZParams.Aggregate.MAX);
+            }
+            else {
+                params = params.aggregate(ZParams.Aggregate.SUM);
+            }
+        }
+        Object ret = null;
+        if (params == null) {
+            ret = command("zinterstore", destination, sets);
+        }
+        else {
+            ret = command("zinterstore", destination, params, sets);
         }
         if (ret instanceof WrongTypeException) {
-            throw new WrongTypeException();
+            throw (WrongTypeException)ret;
         }
         if (ret instanceof SyntaxErrorException) {
-            throw new SyntaxErrorException();
+            throw (SyntaxErrorException)ret;
         }
         return (Long)ret;
     }
 
     @Override public Long zlexcount(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException {
-        return (Long)command("zlexcount", key, min, max);
+        Object ret = command("zlexcount", key, min, max);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotValidStringRangeItemException) {
+            throw (NotValidStringRangeItemException)ret;
+        }
+        return (Long)ret;
     }
 
     private Set<ZsetPair> toZsetPairSet(Set<String> range) {
         if (range == null) {
             return null;
         }
-        Set<ZsetPair> zrange = new HashSet<ZsetPair>();
+        Set<ZsetPair> zrange = new LinkedHashSet<ZsetPair>();
         for (String element : range) {
             zrange.add(new ZsetPair(element, null));
         }
@@ -1017,40 +1081,60 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
         if (range == null) {
             return null;
         }
-        Set<ZsetPair> zrange = new HashSet<ZsetPair>();
+        Set<ZsetPair> zrange = new LinkedHashSet<ZsetPair>();
         for (Tuple tuple : range) {
             zrange.add(new ZsetPair(tuple.getElement(), tuple.getScore()));
         }
         return zrange;
     }
 
-    @Override public Set<ZsetPair> zrange(String key, long start, long stop, String ... options) {
+    @Override public Set<ZsetPair> zrange(String key, long start, long stop, String ... options) throws WrongTypeException {
         boolean withscores = false;
         for (int i = 0; i < options.length; ++i) {
             if (options[i].equals("withscores")) {
                 withscores = true;
             }
         }
+        Object ret = null;
         if (withscores) {
-            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrangeWithScores", key, start, stop));
+            ret = command("zrangeWithScores", key, start, stop);
         }
-        return toZsetPairSet((Set<String>)command("zrange", key, start, stop));
+        else {
+            ret = command("zrange", key, start, stop);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)ret);
+        }
+        return toZsetPairSet((Set<String>)ret);
     }
 
-    @Override public Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) {
+    @Override public Set<ZsetPair> zrevrange(String key, long start, long stop, String ... options) throws WrongTypeException {
         boolean withscores = false;
         for (int i = 0; i < options.length; ++i) {
             if (options[i].equals("withscores")) {
                 withscores = true;
             }
         }
+        Object ret = null;
         if (withscores) {
-            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrevrangeWithScores", key, start, stop));
+            ret = command("zrevrangeWithScores", key, start, stop);
         }
-        return toZsetPairSet((Set<String>)command("zrevrange", key, start, stop));
+        else {
+            ret = command("zrevrange", key, start, stop);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)ret);
+        }
+        return toZsetPairSet((Set<String>)ret);
     }
 
-    @Override public Set<ZsetPair> zrangebylex(final String key, final String min, final String max, final String ... options) {
+    @Override public Set<ZsetPair> zrangebylex(final String key, final String min, final String max, final String ... options) throws WrongTypeException, NotValidStringRangeItemException {
         Integer offset = null;
         Integer count = null;
         for (int i = 0; i < options.length; ++i) {
@@ -1071,13 +1155,23 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
                 }
             }
         }
+        Object ret = null;
         if (offset != null && count != null) {
-            return toZsetPairSet((Set<String>)command("zrangeByLex", key, min, max, offset, count));
+            ret = command("zrangeByLex", key, min, max, offset, count);
         }
-            return toZsetPairSet((Set<String>)command("zrangeByLex", key, min, max));
+        else {
+            ret = command("zrangeByLex", key, min, max);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotValidStringRangeItemException) {
+            throw (NotValidStringRangeItemException)ret;
+        }
+        return toZsetPairSet((Set<String>)ret);
     }
 
-    @Override public Set<ZsetPair> zrevrangebylex(final String key, final String max, final String min, final String ... options) {
+    @Override public Set<ZsetPair> zrevrangebylex(final String key, final String max, final String min, final String ... options) throws WrongTypeException, NotValidStringRangeItemException {
         Integer offset = null;
         Integer count = null;
         for (int i = 0; i < options.length; ++i) {
@@ -1098,77 +1192,292 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
                 }
             }
         }
+        Object ret = null;
         if (offset != null && count != null) {
-            return toZsetPairSet((Set<String>)command("zrevrangeByLex", key, max, min, offset, count));
+            ret = command("zrevrangeByLex", key, max, min, offset, count);
         }
-            return toZsetPairSet((Set<String>)command("zrevrangeByLex", key, max, min));
+        else {
+            ret = command("zrevrangeByLex", key, max, min);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        if (ret instanceof NotValidStringRangeItemException) {
+            throw new NotValidStringRangeItemException();
+        }
+        return toZsetPairSet((Set<String>)ret);
     }
 
-    @Override public Set<ZsetPair> zrangebyscore(final String key, final String min, final String max, final String ... options) {
+    @Override public Set<ZsetPair> zrangebyscore(final String key, final String min, final String max, final String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException {
         boolean withscores = false;
-        for (int i = 0; i < options.length; ++i) {
-            if (options[i].equals("withscores")) {
+        long limitOffset = -1, limitCount = -1;
+        for (int idx = 0; idx < options.length; ++idx) {
+            String option = options[idx];
+            if (option == null) {
+                continue;
+            }
+            if ("withscores".equals(option.toLowerCase())) {
                 withscores = true;
             }
-        }
-        if (withscores) {
-            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrangeByScoreWithScores", key, min, max));
-        }
-        return toZsetPairSet((Set<String>)command("zrangeByScore", key, min, max));
-    }
-
-    @Override public Set<ZsetPair> zrevrangebyscore(final String key, final String max, final String min, final String ... options) {
-        boolean withscores = false;
-        for (int i = 0; i < options.length; ++i) {
-            if (options[i].equals("withscores")) {
-                withscores = true;
+            if ("limit".equals(option.toLowerCase())) {
+                if (options.length <= idx + 2) {
+                    throw new SyntaxErrorException();
+                }
+                try {
+                    limitOffset = Long.parseLong(options[idx + 1]);
+                    limitCount = Long.parseLong(options[idx + 2]);
+                }
+                catch (NumberFormatException e) {
+                    throw new NotIntegerException();
+                }
             }
         }
+        Object ret = null;
         if (withscores) {
-            return toZsetPairSetFromTupleSet((Set<Tuple>)command("zrevrangeByScoreWithScores", key, max, min));
+            if (limitOffset != -1 && limitCount != -1) {
+                ret = command("zrangeByScoreWithScores", key, min, max, limitOffset, limitCount);
+            }
+            else {
+                ret = command("zrangeByScoreWithScores", key, min, max);
+            }
         }
-        return toZsetPairSet((Set<String>)command("zrevrangeByScore", key, max, min));
+        else {
+            if (limitOffset != -1 && limitCount != -1) {
+                ret = command("zrangeByScore", key, min, max, limitOffset, limitCount);
+            }
+            else {
+                ret = command("zrangeByScore", key, min, max);
+            }
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotFloatMinMaxException) {
+            throw (NotFloatMinMaxException)ret;
+        }
+        if (ret instanceof NotIntegerException) {
+            throw (NotIntegerException)ret;
+        }
+        if (ret instanceof SyntaxErrorException) {
+            throw (SyntaxErrorException)ret;
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)ret);
+        }
+        return toZsetPairSet((Set<String>)ret);
     }
 
-    @Override public Long zrank(String key, String member) {
-        return (Long)command("zrank", key, member);
+    @Override public Set<ZsetPair> zrevrangebyscore(final String key, final String max, final String min, final String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException {
+        boolean withscores = false;
+        long limitOffset = -1, limitCount = -1;
+        for (int idx = 0; idx < options.length; ++idx) {
+            String option = options[idx];
+            if (option == null) {
+                continue;
+            }
+            if ("withscores".equals(option.toLowerCase())) {
+                withscores = true;
+            }
+            if ("limit".equals(option.toLowerCase())) {
+                if (options.length <= idx + 2) {
+                    throw new SyntaxErrorException();
+                }
+                try {
+                    limitOffset = Long.parseLong(options[idx + 1]);
+                    limitCount = Long.parseLong(options[idx + 2]);
+                }
+                catch (NumberFormatException e) {
+                    throw new NotIntegerException();
+                }
+            }
+        }
+        Object ret = null;
+        if (withscores) {
+            if (limitOffset != -1 && limitCount != -1) {
+                ret = command("zrevrangeByScoreWithScores", key, max, min, limitOffset, limitCount);
+            }
+            else {
+                ret = command("zrevrangeByScoreWithScores", key, max, min);
+            }
+        }
+        else {
+            if (limitOffset != -1 && limitCount != -1) {
+                ret = command("zrevrangeByScore", key, max, min, limitOffset, limitCount);
+            }
+            else {
+                ret = command("zrevrangeByScore", key, max, min);
+            }
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotFloatMinMaxException) {
+            throw (NotFloatMinMaxException)ret;
+        }
+        if (ret instanceof NotIntegerException) {
+            throw (NotIntegerException)ret;
+        }
+        if (ret instanceof SyntaxErrorException) {
+            throw (SyntaxErrorException)ret;
+        }
+        if (withscores) {
+            return toZsetPairSetFromTupleSet((Set<Tuple>)ret);
+        }
+        return toZsetPairSet((Set<String>)ret);
     }
 
-    @Override public Long zrem(String key, String member, String ... members) {
+    @Override public Long zrank(String key, String member) throws WrongTypeException {
+        Object ret = command("zrank", key, member);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
+    }
+
+    @Override public Long zrem(String key, String member, String ... members) throws WrongTypeException {
         String[] ms = new String[1 + members.length];
         ms[0] = member;
         for (int idx = 0; idx < members.length; ++idx) {
             ms[idx + 1] = members[idx];
         }
-        return (Long)command("zrem", key, ms);
+        Object ret = command("zrem", key, ms);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zremrangebylex(String key, String min, String max) {
-        return (Long)command("zremrangebylex", key, min, max);
+    @Override public Long zremrangebylex(String key, String min, String max) throws WrongTypeException, NotValidStringRangeItemException {
+        Object ret = command("zremrangeByLex", key, min, max);
+        if (ret == null) {
+            return null;
+        }
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotValidStringRangeItemException) {
+            throw (NotValidStringRangeItemException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zremrangebyrank(String key, long start, long stop) {
-        return (Long)command("zremrangebyrank", key, start, stop);
+    @Override public Long zremrangebyrank(String key, long start, long stop) throws WrongTypeException {
+        Object ret = command("zremrangeByRank", key, start, stop);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zremrangebyscore(String key, String min, String max) {
-        return (Long)command("zremrangebyscore", key, min, max);
+    @Override public Long zremrangebyscore(String key, String min, String max) throws WrongTypeException, NotFloatMinMaxException {
+        Object ret = command("zremrangeByScore", key, min, max);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        if (ret instanceof NotFloatMinMaxException) {
+            throw (NotFloatMinMaxException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Long zrevrank(String key, String member) {
-        return (Long)command("zrevrank", key, member);
+    @Override public Long zrevrank(String key, String member) throws WrongTypeException {
+        Object ret = command("zrevrank", key, member);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Long)ret;
     }
 
-    @Override public Double zscore(String key, String member) {
-        return (Double)command("zscore", key, member);
+    @Override public Double zscore(String key, String member) throws WrongTypeException {
+        Object ret = command("zscore", key, member);
+        if (ret instanceof WrongTypeException) {
+            throw (WrongTypeException)ret;
+        }
+        return (Double)ret;
     }
 
-    @Override public Long zunionstore(String destination, int numkeys, String ... options) {
+    @Override public Long zunionstore(String destination, int numkeys, String ... options) throws WrongTypeException, SyntaxErrorException {
+        if (options.length < numkeys) {
+            throw new SyntaxErrorException();
+        }
         String[] sets = new String[numkeys];
-        for (int i = 0; i < numkeys; ++i) {
+        int i;
+        for (i = 0; i < numkeys; ++i) {
             sets[i] = options[i];
         }
-        return (Long)command("zunionstore", destination, sets);
+        i = numkeys;
+        ZParams params = null;
+        List<Double> weights = new ArrayList<Double>();
+        String aggregate = null;
+        while (i < options.length) {
+            if (options[i] == null) {
+                continue;
+            }
+            if ("weights".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                if (params == null) {
+                    params = new ZParams();
+                }
+                int ki = 0;
+                ++i;
+                while (i < options.length && !("aggregate".equals(options[i]))) {
+                    weights.add(Double.valueOf(options[i]));
+                    ++ki;
+                    ++i;
+                }
+            }
+            else if ("aggregate".equals(options[i].toLowerCase())) {
+                if (i + 1 >= options.length) {
+                    throw new SyntaxErrorException();
+                }
+                aggregate = options[i + 1];
+                i += 2;
+            }
+            else {
+                throw new SyntaxErrorException();
+            }
+        }
+        if (!weights.isEmpty()) {
+            if (params == null) {
+                params = new ZParams();
+            }
+            double[] weightsArr = new double[weights.size()];
+            Double[] weightsToArr = weights.toArray(new Double[weights.size()]);
+            for (int j = 0; j < weightsToArr.length; ++j) {
+                weightsArr[j] = weightsToArr[j];
+            }
+            params = params.weightsByDouble(weightsArr);
+        }
+        if (aggregate != null) {
+            if (params == null) {
+                params = new ZParams();
+            }
+            if ("min".equals(aggregate)) {
+                params = params.aggregate(ZParams.Aggregate.MIN);
+            }
+            else if ("max".equals(aggregate)) {
+                params = params.aggregate(ZParams.Aggregate.MAX);
+            }
+            else {
+                params = params.aggregate(ZParams.Aggregate.SUM);
+            }
+        }
+        Object ret = null;
+        if (params == null) {
+            ret = command("zunionstore", destination, sets);
+        }
+        else {
+            ret = command("zunionstore", destination, params, sets);
+        }
+        if (ret instanceof WrongTypeException) {
+            throw new WrongTypeException();
+        }
+        if (ret instanceof SyntaxErrorException) {
+            throw new SyntaxErrorException();
+        }
+        return (Long)ret;
     }
 
     @Override public ScanResult<Set<ZsetPair>> zscan(final String key, final long cursor, final String ... options) throws WrongTypeException {
@@ -1188,6 +1497,9 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
                 }
             }
             ret = command("zscan", key, String.valueOf(cursor), params);
+        }
+        if (ret == null) {
+            return null;
         }
         if (ret instanceof WrongTypeException) {
             throw (WrongTypeException)ret;

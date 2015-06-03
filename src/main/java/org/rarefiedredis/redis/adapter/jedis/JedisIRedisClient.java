@@ -22,6 +22,7 @@ import org.rarefiedredis.redis.SyntaxErrorException;
 import org.rarefiedredis.redis.NotFloatHashException;
 import org.rarefiedredis.redis.NotIntegerHashException;
 import org.rarefiedredis.redis.NotImplementedException;
+import org.rarefiedredis.redis.NotFloatMinMaxException;
 import org.rarefiedredis.redis.IndexOutOfRangeException;
 import org.rarefiedredis.redis.ExecWithoutMultiException;
 import org.rarefiedredis.redis.DiscardWithoutMultiException;
@@ -115,7 +116,6 @@ public final class JedisIRedisClient extends AbstractJedisIRedisClient {
         }
         catch (NoSuchMethodException e) {
             ret = null;
-            e.printStackTrace();
         }
         catch (IllegalAccessException e) {
             ret = null;
@@ -150,8 +150,11 @@ public final class JedisIRedisClient extends AbstractJedisIRedisClient {
             else if (msg.contains("wrong number of arguments")) {
                 ret = new ArgException(e.getCause());
             }
-            else if (msg.contains("min or max not valid string range item")) {
+            else if (msg.contains("not valid string range item")) {
                 ret = new NotValidStringRangeItemException();
+            }
+            else if (msg.contains("min or max is not a float")) {
+                ret = new NotFloatMinMaxException();
             }
         }
         finally {
