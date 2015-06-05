@@ -130,7 +130,81 @@ public class RedisMockKeysTest {
     @Test public void pexpireat() {
     }
 
-    @Test public void pttl() {
+    @Test public void ttlShouldReturnNegativeTwoIfTheKeysDoesNotExist() {
+        RedisMock redis = new RedisMock();
+        String key = "key";
+        assertEquals(-2L, (long)redis.ttl(key));
+    }
+
+    @Test public void ttlShouldReturnNegativeOneIfTheKeyHasNoExpiration() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String key = "key";
+        String value = "value";
+        redis.set(key, value);
+        assertEquals(-1L, (long)redis.ttl(key));
+        assertEquals(value, redis.get(key));
+    }
+
+    @Test public void ttlShouldReturnTheExpireTimeInSeconds() throws WrongTypeException, InterruptedException, SyntaxErrorException {
+        final RedisMock redis = new RedisMock();
+        final String key = "key";
+        final String value = "value";
+        redis.set(key, value);
+        assertEquals(true, redis.expire(key, 2));
+        long ttl = (long)redis.ttl(key);
+        assertEquals(true, 0L < ttl);
+        assertEquals(true, ttl <= 2L);
+        Thread.sleep(750);
+        assertEquals(true, redis.exists(key));
+        ttl = (long)redis.ttl(key);
+        assertEquals(true, 0L < ttl);
+        assertEquals(true, ttl <= 1L);
+        Thread.sleep(450);
+        assertEquals(true, redis.exists(key));
+        ttl = (long)redis.ttl(key);
+        assertEquals(0L, ttl);
+        Thread.sleep(1000);
+        assertEquals(false, redis.exists(key));
+        assertEquals(-2L, (long)redis.ttl(key));
+    }
+
+    @Test public void pttlShouldReturnNegativeTwoIfTheKeysDoesNotExist() {
+        RedisMock redis = new RedisMock();
+        String key = "key";
+        assertEquals(-2L, (long)redis.pttl(key));
+    }
+
+    @Test public void pttlShouldReturnNegativeOneIfTheKeyHasNoExpiration() throws WrongTypeException, SyntaxErrorException {
+        RedisMock redis = new RedisMock();
+        String key = "key";
+        String value = "value";
+        redis.set(key, value);
+        assertEquals(-1L, (long)redis.pttl(key));
+        assertEquals(value, redis.get(key));
+    }
+
+    @Test public void pttlShouldReturnTheExpireTimeInMilliseconds() throws WrongTypeException, InterruptedException, SyntaxErrorException {
+        final RedisMock redis = new RedisMock();
+        final String key = "key";
+        final String value = "value";
+        redis.set(key, value);
+        assertEquals(true, redis.expire(key, 2));
+        long pttl = (long)redis.pttl(key);
+        assertEquals(true, 0L < pttl);
+        assertEquals(true, pttl <= 2000L);
+        Thread.sleep(750);
+        assertEquals(true, redis.exists(key));
+        pttl = (long)redis.pttl(key);
+        assertEquals(true, 0L < pttl);
+        assertEquals(true, pttl <= 1250L);
+        Thread.sleep(450);
+        assertEquals(true, redis.exists(key));
+        pttl = (long)redis.pttl(key);
+        assertEquals(true, 0L < pttl);
+        assertEquals(true, pttl <= 800L);
+        Thread.sleep(1000);
+        assertEquals(false, redis.exists(key));
+        assertEquals(-2L, (long)redis.pttl(key));
     }
 
     @Test public void randomkey() {

@@ -45,6 +45,8 @@ public final class RedisMock extends AbstractRedisMock {
     private List<IRedisCache> caches;
     /** Expiration timers. */
     private Map<String, Timer> timers;
+    /** Expirations. */
+    private Map<String, Long> expirations;
     /** Watchers. */
     private Map<String, WatchKey> watchers;
 
@@ -65,6 +67,7 @@ public final class RedisMock extends AbstractRedisMock {
         caches.add(hashCache);
         caches.add(zsetCache);
         timers = new HashMap<String, Timer>();
+        expirations = new HashMap<String, Long>();
         watchers = new HashMap<String, WatchKey>();
     }
 
@@ -103,6 +106,8 @@ public final class RedisMock extends AbstractRedisMock {
         String key;
         for (int idx = 0; idx < keys.length; idx += 1) {
             key = keys[idx];
+            timers.remove(key);
+            expirations.remove(key);
             for (IRedisCache cache : caches) {
                 if (cache.exists(key)) {
                     cache.remove(key);
@@ -146,6 +151,7 @@ public final class RedisMock extends AbstractRedisMock {
         if (exists(key)) {
             Timer timer = new Timer();
             timers.put(key, timer);
+            expirations.put(key, System.currentTimeMillis() + milliseconds);
             timer.schedule(new TimerTask() {
                     @Override public void run() {
                         del(key);
@@ -159,6 +165,24 @@ public final class RedisMock extends AbstractRedisMock {
     @Override public synchronized Boolean pexpireat(final String key, final long timestamp) {
         Date now = new Date();
         return this.pexpire(key, timestamp - now.getTime());
+    }
+
+    @Override public synchronized Long ttl(final String key) {
+        Long ms = pttl(key);
+        if (ms < 0L) {
+            return ms;
+        }
+        return ms/1000L;
+    }
+
+    @Override public synchronized Long pttl(final String key) {
+        if (!exists(key)) {
+            return -2L;
+        }
+        if (!timers.containsKey(key)) {
+            return -1L;
+        }
+        return expirations.get(key) - System.currentTimeMillis();
     }
 
     @Override public synchronized String type(final String key) {
