@@ -72,6 +72,8 @@ $ mvn test
 
 ## Versions
 
+* 0.0.16
+  - Implement ttl & pttl.
 * 0.0.15
   - Implement all sorted set commands.
   - Fix the JedisIRedisClient with sorted set commands.
