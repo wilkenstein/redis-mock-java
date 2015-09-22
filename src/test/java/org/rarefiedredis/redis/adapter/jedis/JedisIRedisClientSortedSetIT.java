@@ -863,6 +863,97 @@ public class JedisIRedisClientSortedSetIT {
         assertEquals(0, range.size());
     }
 
+    @Test public void zrangebyscoreShouldReturnTheRangeWithLimit() throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException, NotFloatException, NotImplementedException {
+        
+        String k = rander.randkey();
+        String v1 = "v1", v11 = "v11", v2 = "v2", v5 = "v5", v7 = "v7";
+        redis.zadd(k, 1.0, v1, 1.0, v11, 2.0, v2, 5.0, v5, 7.0, v7);
+        Set<ZsetPair> range = redis.zrangebyscore(k, "1", "3", "limit", "0", "1");
+        assertEquals(1, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "0", "2");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "0", "3");
+        assertEquals(3, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "1", "1");
+        assertEquals(1, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "1", "2");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "1", "3");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "4", "3");
+        assertEquals(0, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "0", "3");
+        assertEquals(3, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals("v1", pair.member);
+        pair = iter.next();
+        assertEquals("v11", pair.member);
+        pair = iter.next();
+        assertEquals("v2", pair.member);
+        assertEquals(false, iter.hasNext());
+        range = redis.zrangebyscore(k, "4", "8", "limit", "0", "1");
+        assertEquals(1, range.size());
+        range = redis.zrangebyscore(k, "4", "8", "limit", "0", "2");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "4", "8", "limit", "0", "3");
+        assertEquals(2, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals("v5", pair.member);
+        pair = iter.next();
+        assertEquals("v7", pair.member);
+        assertEquals(false, iter.hasNext());
+    }
+
+    @Test public void zrangebyscoreShouldReturnTheRangeWithLimitAndWithscores() throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException, NotFloatException, NotImplementedException {
+        
+        String k = rander.randkey();
+        String v1 = "v1", v11 = "v11", v2 = "v2", v5 = "v5", v7 = "v7";
+        redis.zadd(k, 1.0, v1, 1.0, v11, 2.0, v2, 5.0, v5, 7.0, v7);
+        Set<ZsetPair> range = redis.zrangebyscore(k, "1", "3", "withscores", "limit", "0", "1");
+        assertEquals(1, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "0", "2", "withscores");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "withscores", "limit", "0", "3");
+        assertEquals(3, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "1", "1", "withscores");
+        assertEquals(1, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "withscores", "limit", "1", "2");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "1", "3", "withscores");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "withscores", "limit", "4", "3");
+        assertEquals(0, range.size());
+        range = redis.zrangebyscore(k, "1", "3", "limit", "0", "3", "withscores");
+        assertEquals(3, range.size());
+        Iterator<ZsetPair> iter = range.iterator();
+        ZsetPair pair = iter.next();
+        assertEquals("v1", pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals("v11", pair.member);
+        assertEquals(1.0, pair.score, 0.1);
+        pair = iter.next();
+        assertEquals("v2", pair.member);
+        assertEquals(2.0, pair.score, 0.1);
+        assertEquals(false, iter.hasNext());
+        range = redis.zrangebyscore(k, "4", "8", "withscores", "limit", "0", "1");
+        assertEquals(1, range.size());
+        range = redis.zrangebyscore(k, "4", "8", "limit", "0", "2", "withscores");
+        assertEquals(2, range.size());
+        range = redis.zrangebyscore(k, "4", "8", "withscores", "limit", "0", "3");
+        assertEquals(2, range.size());
+        iter = range.iterator();
+        pair = iter.next();
+        assertEquals("v5", pair.member);
+        assertEquals(5.0, pair.score, 0.01);
+        pair = iter.next();
+        assertEquals("v7", pair.member);
+        assertEquals(7.0, pair.score, 0.01);
+        assertEquals(false, iter.hasNext());
+    }
+
     @Test public void zrankShouldThrowAnErrorIfKeyIsNotAZset() throws WrongTypeException, SyntaxErrorException, NotImplementedException {
         
         String k = rander.randkey();

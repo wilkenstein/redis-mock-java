@@ -1210,7 +1210,7 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
 
     @Override public Set<ZsetPair> zrangebyscore(final String key, final String min, final String max, final String ... options) throws WrongTypeException, NotFloatMinMaxException, NotIntegerException, SyntaxErrorException {
         boolean withscores = false;
-        long limitOffset = -1, limitCount = -1;
+        int limitOffset = -1, limitCount = -1;
         for (int idx = 0; idx < options.length; ++idx) {
             String option = options[idx];
             if (option == null) {
@@ -1224,8 +1224,8 @@ public abstract class AbstractJedisIRedisClient extends AbstractRedisClient {
                     throw new SyntaxErrorException();
                 }
                 try {
-                    limitOffset = Long.parseLong(options[idx + 1]);
-                    limitCount = Long.parseLong(options[idx + 2]);
+                    limitOffset = Integer.parseInt(options[idx + 1]);
+                    limitCount = Integer.parseInt(options[idx + 2]);
                 }
                 catch (NumberFormatException e) {
                     throw new NotIntegerException();
